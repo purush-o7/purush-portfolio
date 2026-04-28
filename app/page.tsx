@@ -1,21 +1,20 @@
-import { CanvasWrapper } from "./_components/canvas-wrapper"
-import { BioPanel } from "./_components/bio-panel"
+import { HeroCard } from "./_components/sections/hero-card"
+import { EducationSection } from "./_components/sections/education-section"
 
 export default function Home() {
   return (
-    <main className="flex h-screen w-screen overflow-hidden bg-[#07070f]">
-      {/* LEFT — 2/3 canvas */}
-      <section className="relative w-2/3 h-full">
-        <CanvasWrapper />
-      </section>
+    // Double viewport height — first 100vh scrolls the hero card away,
+    // second 100vh keeps the education section in view.
+    <div className="bg-[#07070f]" style={{ height: "200vh" }}>
 
-      {/* divider */}
-      <div className="w-px h-full bg-white/[0.06] shrink-0" />
+      {/* Education: fixed behind the hero, always visible once hero lifts */}
+      <div className="fixed inset-0 z-10">
+        <EducationSection />
+      </div>
 
-      {/* RIGHT — 1/3 bio */}
-      <section className="w-1/3 h-full overflow-y-auto">
-        <BioPanel />
-      </section>
-    </main>
+      {/* Hero: fixed on top, lifts away on scroll */}
+      <HeroCard />
+
+    </div>
   )
 }
