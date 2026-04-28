@@ -9,6 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.venv
 
 # testing
 /coverage
@@ -39,3 +40,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+temp
+
+# local scripts (not committed)
+scripts/
+
+# local tooling / debug artefacts
+.mcp.json
+.playwright-mcp/
+*.png
+!public/*.png
