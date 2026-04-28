@@ -1,18 +1,27 @@
-import { HeroCard } from "./_components/sections/hero-card"
-import { EducationSection } from "./_components/sections/education-section"
+import { HeroCard }             from "./_components/sections/hero-card"
+import { EducationSection }    from "./_components/sections/education-section"
+import { EducationRightCard }  from "./_components/sections/education-right-card"
+import { SocialCubes }         from "./_components/sections/social-cubes"
 
 export default function Home() {
   return (
-    // Double viewport height — first 100vh scrolls the hero card away,
-    // second 100vh keeps the education section in view.
-    <div className="bg-[#07070f]" style={{ height: "200vh" }}>
+    // 300vh — first 100vh lifts hero, second 100vh lifts education right panel
+    <div className="bg-[#07070f]" style={{ height: "300vh" }}>
 
-      {/* Education: fixed behind the hero, always visible once hero lifts */}
-      <div className="fixed inset-0 z-10">
+      {/* ── Campus art — fixed left 60%, never moves ─────────────────────── */}
+      <div className="fixed top-0 left-0 bottom-0 w-3/5 z-10">
         <EducationSection />
       </div>
 
-      {/* Hero: fixed on top, lifts away on scroll */}
+      {/* ── Social cubes — fixed right 40%, behind education panel ──────── */}
+      <div className="fixed top-0 right-0 bottom-0 w-2/5 z-10">
+        <SocialCubes />
+      </div>
+
+      {/* ── Education right panel — lifts on scroll 100vh → 200vh ────────── */}
+      <EducationRightCard />
+
+      {/* ── Hero card — lifts on scroll 0 → 100vh ────────────────────────── */}
       <HeroCard />
 
     </div>
