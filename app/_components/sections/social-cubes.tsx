@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { motion, useAnimation } from "framer-motion"
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
 
 const SIDE = 120
@@ -14,8 +15,6 @@ const FACES = [
   { id: "top",    t: `rotateX(90deg) translateZ(${HALF}px)` },
   { id: "bottom", t: `rotateX(-90deg) translateZ(${HALF}px)` },
 ]
-
-// ── icons ─────────────────────────────────────────────────────────────────────
 
 const IconGitHub = () => (
   <svg viewBox="0 0 24 24" className="w-12 h-12 fill-white/80">
@@ -35,211 +34,214 @@ const IconInstagram = () => (
 
 const CUBES = [
   {
-    name:    "GitHub",
-    url:     "https://github.com/purush-o7",
-    icon:    <IconGitHub />,
-    delay:   0,
-    baseBg:  "rgba(110, 64, 201, 0.12)",   // always-on purple tint
-    glow:    "rgba(130, 70, 230, 0.70)",
-    ring:    "rgba(130, 70, 230, 0.28)",
+    name: "LinkedIn", url: "https://www.linkedin.com/in/purush-o7/", icon: <IconLinkedIn />,
+    delay: 0,   baseBg: "rgba(10, 102, 194, 0.12)", glow: "rgba(10, 102, 194, 0.70)", ring: "rgba(10, 102, 194, 0.28)",
   },
   {
-    name:    "LinkedIn",
-    url:     "https://www.linkedin.com/in/purush-o7/",
-    icon:    <IconLinkedIn />,
-    delay:   130,
-    baseBg:  "rgba(255,255,255,0.04)",
-    glow:    "rgba(10, 102, 194, 0.55)",
-    ring:    "rgba(10, 102, 194, 0.28)",
+    name: "GitHub", url: "https://github.com/purush-o7", icon: <IconGitHub />,
+    delay: 150, baseBg: "rgba(110, 64, 201, 0.12)", glow: "rgba(130, 70, 230, 0.70)", ring: "rgba(130, 70, 230, 0.28)",
   },
   {
-    name:    "Instagram",
-    url:     "https://www.instagram.com/purush_o7",
-    icon:    <IconInstagram />,
-    delay:   260,
-    baseBg:  "rgba(255,255,255,0.04)",
-    glow:    "rgba(225, 48, 108, 0.55)",
-    ring:    "rgba(225, 48, 108, 0.28)",
+    name: "Instagram", url: "https://www.instagram.com/purush_o7", icon: <IconInstagram />,
+    delay: 300, baseBg: "rgba(225, 48, 108, 0.12)", glow: "rgba(225, 48, 108, 0.70)", ring: "rgba(225, 48, 108, 0.28)",
   },
 ] as const
 
-// ── random orientation helpers ────────────────────────────────────────────────
-
 type Rot = { x: number; y: number; z: number }
+const DEFAULT_LAND: Rot = { x: 15, y: -20, z: 8 }
+const DEFAULT_DROP: Rot = { x: -120, y: 30, z: 20 }
 
 function randLand(): Rot {
-  // Keep front face at least partially visible: Y in ±50°, X in ±30°
-  return {
-    x: (Math.random() - 0.5) * 60,
-    y: (Math.random() - 0.5) * 100,
-    z: (Math.random() - 0.5) * 50,
-  }
+  return { x: (Math.random() - 0.5) * 60, y: (Math.random() - 0.5) * 100, z: (Math.random() - 0.5) * 50 }
 }
-
 function randDrop(): Rot {
-  // Dramatic tumbling orientation — cube is "up in the air" rotating freely
-  return {
-    x: -100 - Math.random() * 100,
-    y: (Math.random() - 0.5) * 200,
-    z: (Math.random() - 0.5) * 120,
-  }
+  return { x: -100 - Math.random() * 100, y: (Math.random() - 0.5) * 200, z: (Math.random() - 0.5) * 120 }
 }
-
-function freshRots() {
-  return CUBES.map(() => ({ land: randLand(), drop: randDrop() }))
-}
-
-// ── single cube ───────────────────────────────────────────────────────────────
+function freshRots() { return CUBES.map(() => ({ land: randLand(), drop: randDrop() })) }
 
 interface CubeProps {
-  name:   string
-  url:    string
-  icon:   React.ReactNode
-  delay:  number
-  fallen: boolean
-  land:   Rot
-  drop:   Rot
-  baseBg: string
-  glow:   string
-  ring:   string
+  name: string; url: string; icon: React.ReactNode
+  delay: number; fallen: boolean; land: Rot; drop: Rot
+  baseBg: string; glow: string; ring: string; noScale?: boolean
 }
 
-function Cube({ name, url, icon, delay, fallen, land, drop, baseBg, glow, ring }: CubeProps) {
-  const rot = fallen ? land : drop
-  const ty  = fallen ? 0    : -440
+function Cube({ name, url, icon, delay, fallen, land, drop, baseBg, glow, ring, noScale }: CubeProps) {
   const [hovered, setHovered] = useState(false)
+  const controls = useAnimation()
+  const d = delay / 1000
+
+  // Incommensurate periods per axis → continuous, apparently random tumble
+  const spinDur = {
+    x: 23 + delay * 0.02,   // 23 / 26 / 29 s
+    y: 17 + delay * 0.015,  // 17 / 19 / 21.5 s
+    z: 31 + delay * 0.025,  // 31 / 34.75 / 38.5 s
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (fallen) {
+      // Phase 1 — spring fall to landed orientation
+      controls.start({
+        y: 0,
+        rotateX: land.x, rotateY: land.y, rotateZ: land.z,
+        transition: { type: "spring", stiffness: 52, damping: 12, delay: d },
+      }).then(() => {
+        if (cancelled) return
+        // Phase 2 — slow continuous tumble using incommensurate axis speeds
+        controls.start({
+          rotateX: [land.x, land.x + 360],
+          rotateY: [land.y, land.y + 360],
+          rotateZ: [land.z, land.z + 360],
+          transition: {
+            rotateX: { repeat: Infinity, duration: spinDur.x, ease: "linear" },
+            rotateY: { repeat: Infinity, duration: spinDur.y, ease: "linear" },
+            rotateZ: { repeat: Infinity, duration: spinDur.z, ease: "linear" },
+          },
+        })
+      })
+    } else {
+      // Instant reset off-screen
+      controls.start({
+        y: -440,
+        rotateX: drop.x, rotateY: drop.y, rotateZ: drop.z,
+        transition: { duration: 0 },
+      })
+    }
+
+    return () => { cancelled = true }
+  }, [fallen, land.x, land.y, land.z, drop.x, drop.y, drop.z, d])
 
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex flex-col items-center gap-5"
+    <motion.a
+      href={url} target="_blank" rel="noopener noreferrer"
+      className="flex flex-col items-center gap-4"
       style={{ perspective: "700px" }}
       aria-label={name}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
     >
-      <div
+      <motion.div
+        animate={controls}
+        whileHover={noScale ? {} : { scale: 1.10 }}
+        transition={{ scale: { type: "spring", stiffness: 280, damping: 18 } }}
         style={{
-          width:          `${SIDE}px`,
-          height:         `${SIDE}px`,
-          position:       "relative",
+          width: SIDE, height: SIDE,
+          position: "relative",
           transformStyle: "preserve-3d",
-          transform:      `translateY(${ty}px) rotateX(${rot.x}deg) rotateY(${rot.y}deg) rotateZ(${rot.z}deg) scale(${hovered ? 1.08 : 1})`,
-          transition:     fallen
-            ? `transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) ${delay}ms`
-            : "transform 0.3s ease",
-          willChange:     "transform",
+          willChange: "transform",
         }}
       >
         {FACES.map(({ id, t }) => (
-          <div
+          <motion.div
             key={id}
-            style={{
-              position:           "absolute",
-              width:              `${SIDE}px`,
-              height:             `${SIDE}px`,
-              transform:          t,
-              backfaceVisibility: "hidden",
-              borderRadius:       "18px",
-              border:             "1px solid rgba(255,255,255,0.10)",
+            animate={{
               background: hovered ? ring : baseBg,
-              display:            "flex",
-              alignItems:         "center",
-              justifyContent:     "center",
-              boxShadow: hovered
-                ? `0 0 50px ${glow}, inset 0 0 30px ${ring}`
-                : "none",
-              transition:         "background 0.3s ease, box-shadow 0.3s ease",
+              boxShadow:  hovered ? `0 0 52px ${glow}, inset 0 0 28px ${ring}` : "none",
+            }}
+            transition={{ duration: 0.22 }}
+            style={{
+              position: "absolute", width: SIDE, height: SIDE,
+              transform: t, backfaceVisibility: "hidden",
+              borderRadius: "16px", border: "1px solid rgba(255,255,255,0.10)",
+              display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >
             {icon}
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      <span
+      <motion.span
         className="font-mono text-[10px] tracking-[0.25em] uppercase"
-        style={{
-          color:      hovered ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.25)",
-          opacity:    fallen ? 1 : 0,
-          transition: fallen
-            ? `opacity 0.4s ease ${delay + 500}ms, color 0.3s ease`
-            : "none",
+        animate={{
+          opacity: fallen ? 1 : 0,
+          color: hovered ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.28)",
+        }}
+        transition={{
+          opacity: fallen ? { delay: d + 0.5, duration: 0.4 } : { duration: 0 },
+          color: { duration: 0.25 },
         }}
       >
         {name}
-      </span>
-    </a>
+      </motion.span>
+    </motion.a>
   )
 }
-
-// ── main export ───────────────────────────────────────────────────────────────
 
 export function SocialCubes() {
   const vh = typeof window !== "undefined" ? window.innerHeight : 800
   const p  = useScrollProgress(vh, vh)
 
-  const [fallen, setFallen] = useState(false)
-  // Deterministic initial value avoids SSR/client hydration mismatch.
-  // Randomised on first client-side effect.
-  const [rots, setRots] = useState<ReturnType<typeof freshRots>>(() =>
-    CUBES.map(() => ({
-      land: { x: 15, y: -20, z: 8 },
-      drop: { x: -120, y: 30, z: 20 },
-    }))
+  const [fallen, setFallen]   = useState(false)
+  const [rots, setRots]       = useState<ReturnType<typeof freshRots>>(() =>
+    CUBES.map(() => ({ land: DEFAULT_LAND, drop: DEFAULT_DROP }))
   )
   const prevFallen = useRef(false)
 
-  // Randomise orientations once on mount so they differ from SSR placeholder
   useEffect(() => { setRots(freshRots()) }, [])
 
   useEffect(() => {
     const next = p >= 0.75
-
-    if (next && !prevFallen.current) {
-      // Crossing threshold downward — generate new random orientations then fall
-      setRots(freshRots())
-    }
-
-    if (!next && prevFallen.current) {
-      // Scrolled back up — reset fallen so cubes snap back off-screen instantly
-      setFallen(false)
-    }
-
+    if (next && !prevFallen.current) setRots(freshRots())
+    if (!next && prevFallen.current) setFallen(false)
     if (next && !fallen) setFallen(true)
-
     prevFallen.current = next
   }, [p, fallen])
 
+  const li = CUBES[0], gh = CUBES[1], ig = CUBES[2]
+
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full gap-10">
-      <div
-        className="flex flex-col items-center gap-3"
-        style={{
-          opacity:    fallen ? 1 : 0,
-          transition: fallen ? "opacity 0.5s ease 700ms" : "none",
-        }}
+    <div className="flex flex-col items-center justify-center w-full h-full gap-6">
+
+      {/* Header — slides up on land */}
+      <motion.div
+        className="flex flex-col items-center gap-2"
+        animate={{ opacity: fallen ? 1 : 0, y: fallen ? 0 : 14 }}
+        transition={fallen
+          ? { opacity: { delay: 0.7, duration: 0.5 }, y: { delay: 0.7, type: "spring", stiffness: 180, damping: 22 } }
+          : { duration: 0 }}
       >
-        <p className="font-mono text-xs tracking-[0.3em] uppercase text-white/30">
-          Find me on
-        </p>
+        <p className="font-mono text-xs tracking-[0.3em] uppercase text-white/30">Find me on</p>
         <p className="font-mono text-[10px] tracking-widest uppercase text-white/20">
           Open to contribute to open source
         </p>
-      </div>
+      </motion.div>
 
-      <div className="flex items-end gap-8">
-        {CUBES.map((cube, i) => (
-          <Cube
-            key={cube.name}
-            {...cube}
-            fallen={fallen}
-            land={rots[i]?.land ?? { x: 15, y: -20, z: 8 }}
-            drop={rots[i]?.drop ?? { x: -120, y: 30, z: 20 }}
-          />
-        ))}
+      <div className="flex flex-col items-center">
+
+        {/* LinkedIn — top */}
+        <Cube {...li} fallen={fallen}
+          land={rots[0]?.land ?? DEFAULT_LAND} drop={rots[0]?.drop ?? DEFAULT_DROP} noScale />
+
+        <div style={{ height: 20 }} />
+
+        {/* GitHub + Instagram — V formation */}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 56 }}>
+          <Cube {...gh} fallen={fallen}
+            land={rots[1]?.land ?? DEFAULT_LAND} drop={rots[1]?.drop ?? DEFAULT_DROP} />
+          <Cube {...ig} fallen={fallen}
+            land={rots[2]?.land ?? DEFAULT_LAND} drop={rots[2]?.drop ?? DEFAULT_DROP} />
+        </div>
+
+        {/* Floor line */}
+        <motion.div
+          animate={{ opacity: fallen ? 1 : 0, scaleX: fallen ? 1 : 0.2 }}
+          transition={fallen
+            ? { opacity: { delay: 1.1, duration: 0.4 }, scaleX: { delay: 1.1, type: "spring", stiffness: 120, damping: 20 } }
+            : { duration: 0 }}
+          style={{
+            marginTop: 18, width: 360, height: 1,
+            background: "linear-gradient(to right, transparent, rgba(255,255,255,0.20) 22%, rgba(255,255,255,0.20) 78%, transparent)",
+            transformOrigin: "center",
+          }}
+        />
+        <motion.div
+          animate={{ opacity: fallen ? 1 : 0 }}
+          transition={fallen ? { delay: 1.15, duration: 0.5 } : { duration: 0 }}
+          style={{ width: 360, height: 40, background: "linear-gradient(to bottom, rgba(255,255,255,0.025), transparent)" }}
+        />
+
       </div>
     </div>
   )

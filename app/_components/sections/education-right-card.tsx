@@ -2,6 +2,7 @@
 
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
 
+
 export function EducationRightCard() {
   // Starts at scrollY = 1×vh, completes at scrollY = 2×vh
   const p = useScrollProgress(
@@ -15,9 +16,13 @@ export function EducationRightCard() {
       style={{
         transform:       `translateY(-${p * 100}vh) scale(${1 - p * 0.04})`,
         transformOrigin: "center center",
-        borderTopLeftRadius:  `${p * 24}px`,
-        borderTopRightRadius: `${p * 24}px`,
-        boxShadow: p > 0 ? `0 ${p * 60}px ${p * 120}px rgba(0,0,0,0.7)` : "none",
+        clipPath: (() => {
+          const c = p * 56
+          return c > 0
+            ? `polygon(0% 0%, calc(100% - ${c}px) 0%, 100% ${c}px, 100% 100%, 0% 100%)`
+            : "none"
+        })(),
+        filter:    p > 0 ? `drop-shadow(0 ${p * 48}px ${p * 80}px rgba(0,0,0,0.8))` : "none",
         willChange: "transform",
       }}
     >
