@@ -4,7 +4,6 @@ import { useScrollProgress } from "../../_hooks/use-scroll-progress"
 
 
 export function EducationRightCard() {
-  // Starts at scrollY = 1×vh, completes at scrollY = 2×vh
   const p = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
     typeof window !== "undefined" ? window.innerHeight : 800,
@@ -14,9 +13,10 @@ export function EducationRightCard() {
     <div
       className="fixed top-0 right-0 bottom-0 w-2/5 z-[11] bg-[#07070f] overflow-hidden"
       style={{
-        transform:  `translateY(-${p * 100}vh)`,
+        transform:  `translateY(-${p * 100}vh) scale(${1 - p * 0.03})`,
+        opacity:    1 - p * 0.45,
         boxShadow:  p > 0 ? `0 ${p * 48}px ${p * 80}px rgba(0,0,0,0.8)` : "none",
-        willChange: "transform",
+        willChange: "transform, opacity",
       }}
     >
       <div className="flex flex-col justify-center h-full px-10 py-16 gap-8">

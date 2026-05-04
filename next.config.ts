@@ -2,10 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Serve AVIF to browsers that support it, WebP as fallback.
-    // Next.js converts at request-time and caches the result.
     formats: ["image/avif", "image/webp"],
   },
+  allowedDevOrigins: ["192.168.29.31"],
 };
 
 export default nextConfig;

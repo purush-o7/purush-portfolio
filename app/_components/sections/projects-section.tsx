@@ -6,10 +6,15 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence }     from "framer-motion"
 import { useScrollProgress }           from "../../_hooks/use-scroll-progress"
 
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
 const TempleViewer = dynamic(
   () => import("../temple-viewer").then((m) => m.TempleViewer),
   { ssr: false },
 )
+
 
 const IMAGES = [
   { src: "/projects/kovil-lens/aerial-view.webp",   alt: "Moovar Kovil — aerial view" },
@@ -29,9 +34,10 @@ export function ProjectsSection() {
     typeof window !== "undefined" ? 2 * window.innerHeight : 1600,
   )
 
-  const [slide,    setSlide]    = useState(0)
-  const [hovered,  setHovered]  = useState<number | null>(null)
-  const [lightbox, setLightbox] = useState<number | null>(null)
+  const [slide,      setSlide]      = useState(0)
+  const [hovered,    setHovered]    = useState<number | null>(null)
+  const [lightbox,   setLightbox]   = useState<number | null>(null)
+  const [doiHovered, setDoiHovered] = useState(false)
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const stripRef    = useRef<HTMLDivElement>(null)
@@ -79,13 +85,17 @@ export function ProjectsSection() {
   return (
     <div
       className="fixed inset-0 z-20 bg-[#07070f] flex overflow-hidden"
-      style={{ transform: `translateY(${(1 - p) * 100}vh)`, willChange: "transform" }}
+      style={{
+        transform:  `translateY(${(1 - p) * 100}vh) scale(${0.97 + p * 0.03})`,
+        opacity:    p,
+        willChange: "transform, opacity",
+      }}
     >
-      {/* ── Left: project info + hover image overlay (40%) ────────────────── */}
+      {/* ── Left: project info (40%) ──────────────────────────────────────── */}
       <div className="w-2/5 h-full relative flex flex-col justify-center px-12 gap-7
                       border-r border-white/[0.06] shrink-0 overflow-hidden">
 
-        {/* Hover-triggered image overlay — only appears on hover */}
+        {/* Hover image overlay */}
         <AnimatePresence>
           {hovered !== null && (
             <motion.div
@@ -117,7 +127,7 @@ export function ProjectsSection() {
           )}
         </AnimatePresence>
 
-        {/* Project info — fades behind the hover preview */}
+        {/* Project info — fades on image hover */}
         <motion.div
           className="relative z-0 flex flex-col gap-7"
           animate={{ opacity: hovered !== null ? 0 : 1 }}
@@ -154,14 +164,50 @@ export function ProjectsSection() {
             ))}
           </div>
 
-          <a
+          <motion.a
             href="https://ieeexplore.ieee.org/abstract/document/11172645"
             target="_blank" rel="noopener noreferrer"
-            className="font-mono text-xs tracking-widest uppercase text-white/25
-                       hover:text-white/60 transition-colors duration-300 w-fit"
+            className="relative inline-flex items-center overflow-hidden
+                       font-mono text-xs tracking-widest uppercase w-fit focus:outline-none"
+            onHoverStart={() => setDoiHovered(true)}
+            onHoverEnd={() => setDoiHovered(false)}
+            animate={{
+              color: doiHovered
+                ? "rgba(255,255,255,0.75)"
+                : ["rgba(255,255,255,0.25)", "rgba(255,255,255,0.42)", "rgba(255,255,255,0.25)"],
+            }}
+            transition={{
+              color: doiHovered
+                ? { duration: 0.2 }
+                : { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
+            }}
           >
-            DOI 10.1109/ICVR66534.2025.11172645 ↗
-          </a>
+            <motion.span
+              key={doiHovered ? "doi-hover" : "doi-idle"}
+              aria-hidden
+              className="absolute inset-y-0 w-[55%] pointer-events-none"
+              style={{
+                background: doiHovered
+                  ? "linear-gradient(90deg, transparent, rgba(255,255,255,0.32) 50%, transparent)"
+                  : "linear-gradient(90deg, transparent, rgba(255,255,255,0.16) 50%, transparent)",
+                left: 0,
+              }}
+              initial={{ x: "-100%" }}
+              animate={{ x: "220%" }}
+              transition={doiHovered
+                ? { duration: 0.48, ease: "easeInOut" }
+                : { duration: 0.7, ease: "easeInOut", repeat: Infinity, repeatDelay: 2.4 }
+              }
+            />
+            DOI 10.1109/ICVR66534.2025.11172645&nbsp;
+            <motion.span
+              className="inline-block"
+              animate={doiHovered ? { x: 2, y: -2 } : { x: 0, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              ↗
+            </motion.span>
+          </motion.a>
         </motion.div>
       </div>
 

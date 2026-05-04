@@ -5,15 +5,16 @@ import { CanvasWrapper } from "../canvas-wrapper"
 import { BioPanel } from "../bio-panel"
 
 export function HeroCard() {
-  const p = useScrollProgress()   // 0 at top → 1 after scrolling one viewport
+  const p = useScrollProgress()
 
   return (
     <div
       className="fixed inset-0 z-20 bg-[#07070f] overflow-hidden"
       style={{
-        transform:  `translateY(-${p * 100}vh)`,
+        transform:  `translateY(-${p * 100}vh) scale(${1 - p * 0.03})`,
+        opacity:    1 - p * 0.45,
         boxShadow:  p > 0 ? `0 ${p * 48}px ${p * 80}px rgba(0,0,0,0.8)` : "none",
-        willChange:      "transform",
+        willChange: "transform, opacity",
       }}
     >
       <main className="flex h-screen w-screen">
