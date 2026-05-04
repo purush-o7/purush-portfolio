@@ -3,6 +3,7 @@ import { EducationSection }   from "./_components/sections/education-section"
 import { EducationRightCard } from "./_components/sections/education-right-card"
 import { SocialCubes }        from "./_components/sections/social-cubes"
 import { ProjectsSection }    from "./_components/sections/projects-section"
+import { CylinderSection }    from "./_components/sections/cylinder-section"
 import { ScrollSnap }         from "./_components/scroll-snap"
 
 export default function Home() {
@@ -11,7 +12,8 @@ export default function Home() {
 
       <ScrollSnap />
 
-      {/* 400vh scroll driver — four 100vh blocks give window.scrollY its range */}
+      {/* 500vh scroll driver */}
+      <div style={{ height: "100vh" }} />
       <div style={{ height: "100vh" }} />
       <div style={{ height: "100vh" }} />
       <div style={{ height: "100vh" }} />
@@ -35,6 +37,9 @@ export default function Home() {
 
       {/* ── Projects — slides up on scroll 200vh → 300vh ─────────────────── */}
       <ProjectsSection />
+
+      {/* ── Cylinder — slides up on scroll 300vh → 400vh ─────────────────── */}
+      <CylinderSection />
 
     </div>
   )

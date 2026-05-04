@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react"
 
-const SECTIONS    = 4
+const SECTIONS    = 5
 const ANIM_MS     = 900   // animation duration
 const WHEELEND_MS = 200   // idle time after last momentum tick before unlocking
 const DELTA_MIN   = 10    // minimum |deltaY| to count as intentional (filters 1-3px tails)

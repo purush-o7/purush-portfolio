@@ -176,82 +176,59 @@ function ZoomSync({
   return null
 }
 
-// ── AR waypoint indicators ─────────────────────────────────────────────────────
+// ── 3D arrow indicators (cylinder shaft + cone head) ─────────────────────────
 function PersonArrows({ pos, onMove }: { pos: V3; onMove: (delta: number) => void }) {
-  const fwdRings = useRef<THREE.Group>(null)
-  const bwdRings = useRef<THREE.Group>(null)
-  const yAngle   = Math.atan2(-pos[0], -pos[2])
+  const fwdRef = useRef<THREE.Group>(null)
+  const bwdRef = useRef<THREE.Group>(null)
+  const yAngle = Math.atan2(-pos[0], -pos[2])
+
+  const CYL_R  = 0.008   // shaft radius — long and thin
+  const CYL_L  = 0.24    // shaft length
+  const CONE_R = 0.030   // arrowhead base radius
+  const CONE_H = 0.072   // arrowhead height
+  const START  = 0.06    // gap between person centre and arrow start
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
-    // Ripple: each ring expands from ~0 to full size while fading out — like a sonar ping
-    const ripple = (grp: THREE.Group | null, speed: number, maxOpacity: number) => {
-      if (!grp) return
-      grp.children.forEach((child, i) => {
-        const m   = child as THREE.Mesh
-        const mat = m.material as THREE.MeshBasicMaterial
-        const ph  = ((t * speed - i * 0.32) % 1 + 1) % 1
-        m.scale.setScalar(0.15 + ph * 0.85)
-        mat.opacity = (1 - ph) * maxOpacity
-      })
-    }
-    ripple(fwdRings.current, 1.0, 0.80)
-    ripple(bwdRings.current, 0.7, 0.45)
+    const bob = Math.sin(t * 2.2) * 0.014
+    if (fwdRef.current) fwdRef.current.position.y =  bob
+    if (bwdRef.current) bwdRef.current.position.y = -bob
   })
 
-  const y = pos[1] - 0.12
-
   return (
-    <group position={[pos[0], y, pos[2]]} rotation={[0, yAngle, 0]}>
+    <group position={[pos[0], pos[1] - 0.13, pos[2]]} rotation={[0, yAngle, 0]}>
 
-      {/* ── Forward waypoint — toward temple ── */}
-      <group position={[0, 0, 0.32]}>
-        {/* Pulsing rings */}
-        <group ref={fwdRings}>
-          {[0, 1, 2].map(i => (
-            <mesh key={i} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[0.028, 0.046, 40]} />
-              <meshBasicMaterial color="#67e8f9" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
-            </mesh>
-          ))}
-        </group>
-        {/* Steady centre dot */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.018, 24]} />
-          <meshBasicMaterial color="#67e8f9" transparent opacity={0.9} depthWrite={false} />
+      {/* Forward — toward temple, cyan glow */}
+      <group ref={fwdRef}
+        onPointerDown={e => { e.stopPropagation(); onMove(0.25) }}
+        onPointerOver={() => { document.body.style.cursor = "pointer" }}
+        onPointerOut={() => { document.body.style.cursor = "" }}
+      >
+        {/* shaft — cylinder rotated to lie along +Z */}
+        <mesh position={[0, 0, START + CYL_L / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[CYL_R, CYL_R, CYL_L, 8]} />
+          <meshStandardMaterial color="#67e8f9" emissive="#67e8f9" emissiveIntensity={0.6} roughness={0.2} />
         </mesh>
-        {/* Invisible hit area */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]}
-          onPointerDown={e => { e.stopPropagation(); onMove(0.25) }}
-          onPointerOver={() => { document.body.style.cursor = "pointer" }}
-          onPointerOut={() => { document.body.style.cursor = "" }}
-        >
-          <circleGeometry args={[0.14, 20]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        {/* head — cone tip pointing in +Z */}
+        <mesh position={[0, 0, START + CYL_L + CONE_H / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[CONE_R, CONE_H, 8]} />
+          <meshStandardMaterial color="#67e8f9" emissive="#67e8f9" emissiveIntensity={0.6} roughness={0.2} />
         </mesh>
       </group>
 
-      {/* ── Backward waypoint — away from temple ── */}
-      <group position={[0, 0, -0.32]}>
-        <group ref={bwdRings}>
-          {[0, 1, 2].map(i => (
-            <mesh key={i} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[0.028, 0.046, 40]} />
-              <meshBasicMaterial color="#94a3b8" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
-            </mesh>
-          ))}
-        </group>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.018, 24]} />
-          <meshBasicMaterial color="#94a3b8" transparent opacity={0.55} depthWrite={false} />
+      {/* Backward — away from temple, rotated 180° so it extends in −Z, slate */}
+      <group ref={bwdRef} rotation={[0, Math.PI, 0]}
+        onPointerDown={e => { e.stopPropagation(); onMove(-0.25) }}
+        onPointerOver={() => { document.body.style.cursor = "pointer" }}
+        onPointerOut={() => { document.body.style.cursor = "" }}
+      >
+        <mesh position={[0, 0, START + CYL_L / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[CYL_R, CYL_R, CYL_L, 8]} />
+          <meshStandardMaterial color="#94a3b8" emissive="#64748b" emissiveIntensity={0.25} roughness={0.5} />
         </mesh>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}
-          onPointerDown={e => { e.stopPropagation(); onMove(-0.25) }}
-          onPointerOver={() => { document.body.style.cursor = "pointer" }}
-          onPointerOut={() => { document.body.style.cursor = "" }}
-        >
-          <circleGeometry args={[0.14, 20]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        <mesh position={[0, 0, START + CYL_L + CONE_H / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[CONE_R, CONE_H, 8]} />
+          <meshStandardMaterial color="#94a3b8" emissive="#64748b" emissiveIntensity={0.25} roughness={0.5} />
         </mesh>
       </group>
 
