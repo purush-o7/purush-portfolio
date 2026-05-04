@@ -138,8 +138,10 @@ function Galaxy({ p }: { p: GalaxyParams }) {
     if (!ref.current) return
     const t = clock.getElapsedTime()
     ;(ref.current.material as THREE.ShaderMaterial).uniforms.uTime.value = t
-    // slow tilt oscillation: −10° → +10° over ~42 s period
+    // tilt oscillation: −10° → +10° over ~42 s period
     ref.current.rotation.x = Math.sin(t * 0.15) * (10 * Math.PI / 180)
+    // slow self-rotation around Y axis: full turn every ~210 s
+    ref.current.rotation.y = t * 0.03
   })
 
   return <points ref={ref} geometry={geo} material={mat} renderOrder={-1} />

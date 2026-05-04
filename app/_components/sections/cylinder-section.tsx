@@ -9,18 +9,19 @@ const CylinderScene = dynamic(
 )
 
 export function CylinderSection() {
+  // Snap visible at scroll ≥ 3vh while ProjectsSection (z-20) still covers us (z-15),
+  // so there is no flash. Revealed as ProjectsSection exits upward during 3vh → 4vh.
   const p = useScrollProgress(
-    typeof window !== "undefined" ? window.innerHeight : 800,
-    typeof window !== "undefined" ? 3 * window.innerHeight : 2400,
+    typeof window !== "undefined" ? 10 : 10,
+    typeof window !== "undefined" ? 3 * window.innerHeight - 10 : 2390,
   )
 
   return (
     <div
-      className="fixed inset-0 z-20 bg-black overflow-hidden"
+      className="fixed inset-0 bg-black overflow-hidden"
       style={{
-        transform:  `translateY(${(1 - p) * 100}vh) scale(${0.97 + p * 0.03})`,
-        opacity:    p,
-        willChange: "transform, opacity",
+        zIndex:     15,
+        visibility: p >= 1 ? "visible" : "hidden",
       }}
     >
       <CylinderScene />

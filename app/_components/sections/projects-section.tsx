@@ -24,9 +24,15 @@ const IMAGES = [
 ]
 
 export function ProjectsSection() {
+  // Entry: slides up into view during scroll 2vh → 3vh
   const p = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
     typeof window !== "undefined" ? 2 * window.innerHeight : 1600,
+  )
+  // Exit: slides up off the top during scroll 3vh → 4vh, revealing cable scene behind
+  const exit = useScrollProgress(
+    typeof window !== "undefined" ? window.innerHeight : 800,
+    typeof window !== "undefined" ? 3 * window.innerHeight : 2400,
   )
 
   const [hovered,    setHovered]    = useState<number | null>(null)
@@ -38,7 +44,7 @@ export function ProjectsSection() {
     <div
       className="fixed inset-0 z-20 bg-[#07070f] flex overflow-hidden"
       style={{
-        transform:  `translateY(${(1 - p) * 100}vh) scale(${0.97 + p * 0.03})`,
+        transform:  `translateY(${((1 - p) - exit) * 100}vh) scale(${0.97 + p * 0.03})`,
         opacity:    p,
         willChange: "transform, opacity",
       }}
