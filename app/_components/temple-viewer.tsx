@@ -176,6 +176,89 @@ function ZoomSync({
   return null
 }
 
+// ── AR waypoint indicators ─────────────────────────────────────────────────────
+function PersonArrows({ pos, onMove }: { pos: V3; onMove: (delta: number) => void }) {
+  const fwdRings = useRef<THREE.Group>(null)
+  const bwdRings = useRef<THREE.Group>(null)
+  const yAngle   = Math.atan2(-pos[0], -pos[2])
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    // Ripple: each ring expands from ~0 to full size while fading out — like a sonar ping
+    const ripple = (grp: THREE.Group | null, speed: number, maxOpacity: number) => {
+      if (!grp) return
+      grp.children.forEach((child, i) => {
+        const m   = child as THREE.Mesh
+        const mat = m.material as THREE.MeshBasicMaterial
+        const ph  = ((t * speed - i * 0.32) % 1 + 1) % 1
+        m.scale.setScalar(0.15 + ph * 0.85)
+        mat.opacity = (1 - ph) * maxOpacity
+      })
+    }
+    ripple(fwdRings.current, 1.0, 0.80)
+    ripple(bwdRings.current, 0.7, 0.45)
+  })
+
+  const y = pos[1] - 0.12
+
+  return (
+    <group position={[pos[0], y, pos[2]]} rotation={[0, yAngle, 0]}>
+
+      {/* ── Forward waypoint — toward temple ── */}
+      <group position={[0, 0, 0.32]}>
+        {/* Pulsing rings */}
+        <group ref={fwdRings}>
+          {[0, 1, 2].map(i => (
+            <mesh key={i} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.028, 0.046, 40]} />
+              <meshBasicMaterial color="#67e8f9" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+            </mesh>
+          ))}
+        </group>
+        {/* Steady centre dot */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.018, 24]} />
+          <meshBasicMaterial color="#67e8f9" transparent opacity={0.9} depthWrite={false} />
+        </mesh>
+        {/* Invisible hit area */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]}
+          onPointerDown={e => { e.stopPropagation(); onMove(0.25) }}
+          onPointerOver={() => { document.body.style.cursor = "pointer" }}
+          onPointerOut={() => { document.body.style.cursor = "" }}
+        >
+          <circleGeometry args={[0.14, 20]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      </group>
+
+      {/* ── Backward waypoint — away from temple ── */}
+      <group position={[0, 0, -0.32]}>
+        <group ref={bwdRings}>
+          {[0, 1, 2].map(i => (
+            <mesh key={i} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.028, 0.046, 40]} />
+              <meshBasicMaterial color="#94a3b8" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+            </mesh>
+          ))}
+        </group>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.018, 24]} />
+          <meshBasicMaterial color="#94a3b8" transparent opacity={0.55} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}
+          onPointerDown={e => { e.stopPropagation(); onMove(-0.25) }}
+          onPointerOver={() => { document.body.style.cursor = "pointer" }}
+          onPointerOut={() => { document.body.style.cursor = "" }}
+        >
+          <circleGeometry args={[0.14, 20]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      </group>
+
+    </group>
+  )
+}
+
 // ── POV constants ──────────────────────────────────────────────────────────────
 const POV_W = 480
 const POV_H = 300
@@ -298,6 +381,17 @@ export function TempleViewer() {
 
   const povDbg = useRef({ px: 0, py: 0, pz: 0, lx: 0, ly: 0, lz: 0, fov: 68 })
 
+  // Person position — controlled by arrow clicks
+  const [personPos, setPersonPos] = useState<V3>([-2.640, -0.500, 0.710])
+  const movePersonBy = useCallback((delta: number) => {
+    setPersonPos(prev => {
+      const dist = Math.sqrt(prev[0] ** 2 + prev[2] ** 2)
+      const newDist = Math.max(1.5, Math.min(5.0, dist - delta))
+      const scale = newDist / dist
+      return [prev[0] * scale, prev[1], prev[2] * scale] as V3
+    })
+  }, [])
+
   // Fullscreen toggle
   const [isFullscreen, setIsFullscreen] = useState(false)
   useEffect(() => {
@@ -380,10 +474,11 @@ export function TempleViewer() {
             <PersonModel
               templeGroupRef={templeGroupRef}
               worldGroupRef={worldGroupRef}
-              dbg={{ womanPos: [-2.640, -0.500, 0.710], personScale: 0.280 }}
+              dbg={{ womanPos: personPos, personScale: 0.280 }}
               eyeRef={eyeRef}
             />
           </Suspense>
+          <PersonArrows pos={personPos} onMove={movePersonBy} />
         </group>
 
         <POVRenderer rt={rt} eyeRef={eyeRef} templeRef={templeGroupRef} dbgRef={povDbg} />

@@ -2,13 +2,9 @@
 
 import dynamic                        from "next/dynamic"
 import Image                           from "next/image"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState } from "react"
 import { motion, AnimatePresence }     from "framer-motion"
 import { useScrollProgress }           from "../../_hooks/use-scroll-progress"
-
-function easeInOutCubic(t: number) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-}
 
 const TempleViewer = dynamic(
   () => import("../temple-viewer").then((m) => m.TempleViewer),
@@ -26,7 +22,6 @@ const IMAGES = [
   { src: "/projects/kovil-lens/site-visit-2.jpg",   alt: "Site visit — temple complex" },  // already optimal as JPEG
   { src: "/projects/kovil-lens/tooltips.webp",      alt: "KovilLens — UI tooltips" },
 ]
-const INTERVAL = 3000
 
 export function ProjectsSection() {
   const p = useScrollProgress(
@@ -34,53 +29,10 @@ export function ProjectsSection() {
     typeof window !== "undefined" ? 2 * window.innerHeight : 1600,
   )
 
-  const [slide,      setSlide]      = useState(0)
   const [hovered,    setHovered]    = useState<number | null>(null)
   const [lightbox,   setLightbox]   = useState<number | null>(null)
   const [doiHovered, setDoiHovered] = useState(false)
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const stripRef    = useRef<HTMLDivElement>(null)
-  const btnRefs     = useRef<(HTMLButtonElement | null)[]>([])
-
-  // Start / restart the auto-advance interval
-  const startInterval = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    intervalRef.current = setInterval(
-      () => setSlide((s) => (s + 1) % IMAGES.length),
-      INTERVAL,
-    )
-  }, [])
-
-  // Pause while hovering, run otherwise
-  useEffect(() => {
-    if (hovered !== null) {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      return
-    }
-    startInterval()
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [hovered, startInterval])
-
-  // Navigate with modulo wrap; resets the interval so it doesn't fire immediately after
-  const goTo = useCallback((idx: number) => {
-    setSlide(((idx % IMAGES.length) + IMAGES.length) % IMAGES.length)
-    startInterval()
-  }, [startInterval])
-
-  const handlePrev = useCallback(() => goTo(slide - 1), [goTo, slide])
-  const handleNext = useCallback(() => goTo(slide + 1), [goTo, slide])
-
-  // Smooth-scroll strip to center the active image
-  useEffect(() => {
-    const btn   = btnRefs.current[slide]
-    const strip = stripRef.current
-    if (!btn || !strip) return
-    strip.scrollTo({
-      left: btn.offsetLeft - strip.offsetWidth / 2 + btn.offsetWidth / 2,
-      behavior: "smooth",
-    })
-  }, [slide])
+  const [stripPaused, setStripPaused] = useState(false)
 
   return (
     <div
@@ -224,72 +176,69 @@ export function ProjectsSection() {
 
         <div className="h-px bg-white/[0.06] shrink-0" />
 
-        {/* Image strip + arrows */}
-        <div className="relative" style={{ height: "30%" }}>
+        {/* Infinite right-to-left gallery */}
+        <div className="relative overflow-hidden" style={{
+          height: "30%",
+          background: "radial-gradient(ellipse 120% 80% at 60% 50%, #1a0a2e 0%, #0d0520 30%, #060412 60%, #07070f 100%)",
+        }}>
+          <style>{`
+            @keyframes gallery-rtl {
+              from { transform: translateX(0); }
+              to   { transform: translateX(-50%); }
+            }
+          `}</style>
 
-          {/* Left arrow */}
-          <button
-            onClick={handlePrev}
-            aria-label="Previous image"
-            className="absolute left-0 top-0 bottom-0 z-10 px-3 flex items-center
-                       bg-gradient-to-r from-[#07070f]/90 to-transparent
-                       hover:from-[#07070f] transition-all duration-200 focus:outline-none"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-white/50 hover:text-white/90 transition-colors">
-              <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          {/* Nebula core glow */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: "radial-gradient(ellipse 50% 60% at 55% 40%, rgba(120,60,220,0.12) 0%, transparent 70%), radial-gradient(ellipse 30% 40% at 30% 60%, rgba(60,120,220,0.08) 0%, transparent 60%)",
+          }} />
 
-          {/* Scrollable strip */}
+          {/* Deep-space edge fades */}
+          <div className="absolute inset-y-0 left-0 w-16 z-10 pointer-events-none
+                          bg-gradient-to-r from-[#07070f] to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-16 z-10 pointer-events-none
+                          bg-gradient-to-l from-[#07070f] to-transparent" />
+
+          {/* Animated track — h-full anchors the height chain so child % heights resolve */}
           <div
-            ref={stripRef}
-            className="flex overflow-x-auto overflow-y-hidden h-full"
-            style={{ scrollbarWidth: "none" } as React.CSSProperties}
+            className="flex items-center gap-3 h-full"
+            style={{
+              width: "max-content",
+              animation: "gallery-rtl 38s linear infinite",
+              animationPlayState: stripPaused ? "paused" : "running",
+            }}
+            onMouseEnter={() => setStripPaused(true)}
+            onMouseLeave={() => { setStripPaused(false); setHovered(null) }}
           >
-            {IMAGES.map((img, i) => (
+            {[...IMAGES, ...IMAGES].map((img, i) => (
               <button
-                key={img.src}
-                ref={(el) => { btnRefs.current[i] = el }}
-                onMouseEnter={() => setHovered(i)}
+                key={i}
+                onMouseEnter={() => setHovered(i % IMAGES.length)}
                 onMouseLeave={() => setHovered(null)}
-                onClick={() => setLightbox(i)}
-                className="relative shrink-0 h-full overflow-hidden focus:outline-none bg-[#07070f]"
-                style={{ aspectRatio: "16/9" }}
+                onClick={() => setLightbox(i % IMAGES.length)}
                 aria-label={img.alt}
+                className="relative shrink-0 overflow-hidden focus:outline-none
+                           rounded-xl transition-transform duration-300 hover:scale-[1.04]"
+                style={{
+                  height: "calc(100% - 20px)",
+                  aspectRatio: "16/9",
+                  background: "#06060f",
+                  padding: "3px",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.06), 0 8px 40px rgba(0,0,0,0.7)",
+                }}
               >
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  fill
-                  className={`object-contain transition-all duration-500 ${
-                    slide === i ? "brightness-100 scale-100" : "brightness-45 hover:brightness-75"
-                  }`}
-                  sizes="220px"
-                />
-                {slide === i && (
-                  <motion.div
-                    layoutId="strip-indicator"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/60"
-                    transition={{ type: "spring", stiffness: 380, damping: 36 }}
+                <div className="relative w-full h-full rounded-[9px] overflow-hidden">
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    className="object-cover brightness-75 hover:brightness-100 transition-all duration-500"
+                    sizes="220px"
                   />
-                )}
+                </div>
               </button>
             ))}
           </div>
-
-          {/* Right arrow */}
-          <button
-            onClick={handleNext}
-            aria-label="Next image"
-            className="absolute right-0 top-0 bottom-0 z-10 px-3 flex items-center
-                       bg-gradient-to-l from-[#07070f]/90 to-transparent
-                       hover:from-[#07070f] transition-all duration-200 focus:outline-none"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-white/50 hover:text-white/90 transition-colors">
-              <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-
         </div>
       </div>
 
