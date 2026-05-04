@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useMemo, Suspense, useCallback } from "react"
+import { useRef, useMemo, Suspense, useCallback, useEffect, useState } from "react"
 import { Canvas, useFrame, useThree }                        from "@react-three/fiber"
 import { useGLTF, useTexture, Sky }                          from "@react-three/drei"
 import { EffectComposer, Bloom }                             from "@react-three/postprocessing"
@@ -79,14 +79,20 @@ function Ground() {
 
 // ── Person (head + HoloLens combined) — looks at the temple group dynamically ──
 function PersonModel({
-  templeGroupRef, worldGroupRef, dbg,
+  templeGroupRef, worldGroupRef, dbg, eyeRef,
 }: {
   templeGroupRef: React.RefObject<THREE.Group | null>
   worldGroupRef:  React.RefObject<THREE.Group | null>
   dbg: { womanPos: V3; personScale: number }
+  eyeRef: React.RefObject<THREE.Group | null>
 }) {
   const { scene } = useGLTF("/models/person_with_hololens.glb")
-  const cloned    = useMemo(() => scene.clone(true), [scene])
+  // Clone and put person on layer 1 so the POV camera (layer 0 only) skips it
+  const cloned = useMemo(() => {
+    const c = scene.clone(true)
+    c.traverse(node => { node.layers.set(1) })
+    return c
+  }, [scene])
   const pivotRef  = useRef<THREE.Group>(null)
 
   // Normalise the combined model to 1.2 units tall, centred at origin
@@ -121,6 +127,7 @@ function PersonModel({
   return (
     <group position={dbg.womanPos} scale={dbg.personScale}>
       <group ref={pivotRef}>
+        <group ref={eyeRef} position={[0, 0.22, 0.05]} />
         <group scale={s} position={offset}>
           <primitive object={cloned} />
         </group>
@@ -169,6 +176,101 @@ function ZoomSync({
   return null
 }
 
+// ── POV constants ──────────────────────────────────────────────────────────────
+const POV_W = 480
+const POV_H = 300
+
+// ── POVRenderer: owns ALL rendering for the canvas ────────────────────────────
+// Consolidates POV render, main scene render, and overlay into one useFrame so
+// the orthographic overlay camera is computed fresh from the actual size every
+// frame — fixes the fullscreen misalignment bug.
+function POVRenderer({
+  rt, eyeRef, templeRef, dbgRef,
+}: {
+  rt:        THREE.WebGLRenderTarget
+  eyeRef:    React.RefObject<THREE.Group | null>
+  templeRef: React.RefObject<THREE.Group | null>
+  dbgRef:    React.RefObject<{ px:number; py:number; pz:number; lx:number; ly:number; lz:number; fov:number }>
+}) {
+  const { gl, scene, camera } = useThree()
+
+  // POV perspective camera — skips layer 1 (person model) so it doesn't film itself
+  const povCam = useMemo(() => {
+    const c = new THREE.PerspectiveCamera(68, POV_W / POV_H, 0.01, 200)
+    c.layers.set(0)
+    return c
+  }, [])
+
+  // Orthographic overlay camera: fixed NDC frustum [-1,1] so no resize logic needed
+  const ortho = useMemo(() => new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10), [])
+
+  // Overlay scene holds just the POV pane mesh
+  const overlayScene = useMemo(() => new THREE.Scene(), [])
+  const paneMesh = useMemo(() => {
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({ map: rt.texture, toneMapped: false, depthTest: false }),
+    )
+    return m
+  }, [rt])
+  useEffect(() => {
+    overlayScene.add(paneMesh)
+    return () => { overlayScene.remove(paneMesh) }
+  }, [overlayScene, paneMesh])
+
+  // Main camera must see all layers (person is on layer 1)
+  useEffect(() => { camera.layers.enableAll() }, [camera])
+
+  const _t = useMemo(() => new THREE.Vector3(), [])
+
+  // Priority 1: fill the POV render target before EffectComposer renders the main scene.
+  // Runs AFTER priority-0 PersonModel look-at (pivot already facing temple),
+  // so eye world position is always current when we sample it.
+  useFrame(({ gl, scene }) => {
+    if (!eyeRef.current || !templeRef.current) return
+    const d = dbgRef.current
+
+    // Force the whole scene's world matrices to be fresh so getWorldPosition
+    // picks up the drag rotation that was set synchronously by onPointerMove
+    scene.updateMatrixWorld()
+
+    eyeRef.current.getWorldPosition(povCam.position)
+    povCam.position.x += d.px
+    povCam.position.y += d.py
+    povCam.position.z += d.pz
+
+    templeRef.current.getWorldPosition(_t)
+    _t.x += d.lx
+    _t.y += d.ly
+    _t.z += d.lz
+
+    if (povCam.fov !== d.fov) { povCam.fov = d.fov; povCam.updateProjectionMatrix() }
+    povCam.lookAt(_t)
+
+    gl.setRenderTarget(rt)
+    gl.render(scene, povCam)
+    gl.setRenderTarget(null)
+  }, 1)
+
+  // Priority 2: draw the overlay AFTER EffectComposer (priority 1) has written Bloom to the framebuffer
+  useFrame(({ gl, size }) => {
+    const sa   = size.width / size.height
+    const w    = 0.58
+    const h    = w * sa / (POV_W / POV_H)
+    const padX = 32 / size.width
+    const padY = 32 / size.height
+    paneMesh.scale.set(w, h, 1)
+    paneMesh.position.set(1 - w / 2 - padX, -(1 - h / 2 - padY), -0.5)
+
+    gl.autoClear = false
+    gl.clearDepth()
+    gl.render(overlayScene, ortho)
+    gl.autoClear = true
+  }, 2)
+
+  return null
+}
+
 // ── Preloader ──────────────────────────────────────────────────────────────────
 useGLTF.preload("/models/Temple.glb")
 useGLTF.preload("/models/person_with_hololens.glb")
@@ -189,6 +291,21 @@ export function TempleViewer() {
   const cameraElevRef  = useRef(2)
   const cameraAngleRef = useRef(0)  // 0 = front, π/2 = side, π = back
 
+  // POV feed
+  const eyeRef = useRef<THREE.Group>(null)
+  const rt     = useMemo(() => new THREE.WebGLRenderTarget(POV_W, POV_H), [])
+  useEffect(() => () => rt.dispose(), [rt])
+
+  const povDbg = useRef({ px: 0, py: 0, pz: 0, lx: 0, ly: 0, lz: 0, fov: 68 })
+
+  // Fullscreen toggle
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setIsFullscreen(false) }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
+
   const handleGroupDown = useCallback((
     e: { clientX: number; clientY: number; stopPropagation: () => void },
     groupRef: React.RefObject<THREE.Group | null>,
@@ -203,7 +320,15 @@ export function TempleViewer() {
   return (
     <div
       data-no-scroll-snap="true"
-      style={{ position: "relative", width: "100%", height: "100%", cursor: activeGroup.current ? "grabbing" : "default" }}
+      style={{
+        position:  isFullscreen ? "fixed" : "relative",
+        inset:     isFullscreen ? 0 : "auto",
+        zIndex:    isFullscreen ? 50 : "auto",
+        width:     "100%",
+        height:    "100%",
+        cursor:    activeGroup.current ? "grabbing" : "default",
+        background: "#07070f",
+      }}
       onPointerMove={e => {
         if (!activeGroup.current) return
         const dx = e.clientX - dragStart.current.x
@@ -256,10 +381,12 @@ export function TempleViewer() {
               templeGroupRef={templeGroupRef}
               worldGroupRef={worldGroupRef}
               dbg={{ womanPos: [-2.640, -0.500, 0.710], personScale: 0.280 }}
+              eyeRef={eyeRef}
             />
           </Suspense>
         </group>
 
+        <POVRenderer rt={rt} eyeRef={eyeRef} templeRef={templeGroupRef} dbgRef={povDbg} />
         <ZoomSync distRef={cameraDistRef} elevRef={cameraElevRef} angleRef={cameraAngleRef} />
 
         <EffectComposer>
@@ -275,8 +402,40 @@ export function TempleViewer() {
         }}
       />
 
-      {/* View preset buttons */}
-      <div className="absolute bottom-4 left-4 z-10 flex gap-1.5">
+      {/* HoloLens POV frame — decorative overlay aligned with the Hud plane */}
+      <div
+        className="absolute pointer-events-none z-10"
+        style={{ bottom: 16, right: 16, width: "29%", aspectRatio: `${POV_W}/${POV_H}` }}
+      >
+        {/* Outer glow border */}
+        <div className="absolute inset-0 rounded-sm border border-cyan-400/25"
+          style={{ boxShadow: "0 0 18px rgba(0,200,255,0.10), inset 0 0 18px rgba(0,200,255,0.04)" }} />
+        {/* Corner brackets */}
+        <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-cyan-400/55" />
+        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-cyan-400/55" />
+        <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-cyan-400/55" />
+        <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-cyan-400/55" />
+        {/* Labels */}
+        <span className="absolute top-1.5 left-2.5 font-mono text-[8px] tracking-widest uppercase text-cyan-400/60 select-none">
+          ◉ HoloLens POV
+        </span>
+        <span className="absolute bottom-1.5 right-2 font-mono text-[8px] tracking-widest uppercase text-cyan-300/30 select-none">
+          AR · Live
+        </span>
+        {/* Scan lines */}
+        <div className="absolute inset-0" style={{
+          background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.10) 3px, rgba(0,0,0,0.10) 4px)",
+        }} />
+      </div>
+
+      {/* Description + view preset buttons + fullscreen toggle */}
+      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2 items-start max-w-[280px]">
+        <p className="font-mono text-[9px] leading-relaxed text-white/30 select-none">
+          Consider this the trailer. The actual KovilLens experience layers gesture
+          controls, animated AR overlays, and game-like exploration onto a real
+          9th-century Chola temple — through a HoloLens&nbsp;2, with your bare hands.
+        </p>
+      <div className="flex gap-1.5 items-center">
         {([
           { label: "Front", angle: 0 },
           { label: "Side",  angle: Math.PI / 2 },
@@ -284,7 +443,10 @@ export function TempleViewer() {
         ] as const).map(({ label, angle }) => (
           <button
             key={label}
-            onClick={() => { cameraAngleRef.current = angle }}
+            onClick={() => {
+              // Offset by the temple's current Y rotation so the view is always relative to it
+              cameraAngleRef.current = (templeGroupRef.current?.rotation.y ?? 0) + angle
+            }}
             className="font-mono text-[9px] tracking-widest uppercase px-2.5 py-1
                        bg-[#07070f]/70 border border-white/15 text-white/40
                        hover:text-white/75 hover:border-white/35
@@ -293,6 +455,29 @@ export function TempleViewer() {
             {label}
           </button>
         ))}
+
+        <div className="w-px h-4 bg-white/10 mx-0.5" />
+
+        <button
+          onClick={() => setIsFullscreen(f => !f)}
+          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          className="p-1.5 bg-[#07070f]/70 border border-white/15 text-white/40
+                     hover:text-white/75 hover:border-white/35
+                     transition-colors duration-150 rounded-sm backdrop-blur-sm"
+        >
+          {isFullscreen ? (
+            // Compress icon
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M4 1v3H1M8 1v3h3M4 11v-3H1M8 11v-3h3" />
+            </svg>
+          ) : (
+            // Expand icon
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M1 4V1h3M8 1h3v3M11 8v3H8M3 11H1V8" />
+            </svg>
+          )}
+        </button>
+      </div>
       </div>
 
     </div>
