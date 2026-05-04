@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { motion, useAnimation } from "framer-motion"
-import { useScrollProgress } from "../../_hooks/use-scroll-progress"
+import { useState } from "react"
+import { motion } from "framer-motion"
 
 const SIDE = 120
 const HALF = SIDE / 2
@@ -35,82 +34,36 @@ const IconInstagram = () => (
 const CUBES = [
   {
     name: "LinkedIn", url: "https://www.linkedin.com/in/purush-o7/", icon: <IconLinkedIn />,
-    delay: 0,   baseBg: "rgba(10, 102, 194, 0.12)", glow: "rgba(10, 102, 194, 0.70)", ring: "rgba(10, 102, 194, 0.28)",
+    delay: 0,   initRot: { x: 15,  y: -20, z: 8  },
+    baseBg: "rgba(10, 102, 194, 0.12)", glow: "rgba(10, 102, 194, 0.70)", ring: "rgba(10, 102, 194, 0.28)",
   },
   {
     name: "GitHub", url: "https://github.com/purush-o7", icon: <IconGitHub />,
-    delay: 150, baseBg: "rgba(110, 64, 201, 0.12)", glow: "rgba(130, 70, 230, 0.70)", ring: "rgba(130, 70, 230, 0.28)",
+    delay: 150, initRot: { x: -10, y: 25,  z: -15 },
+    baseBg: "rgba(110, 64, 201, 0.12)", glow: "rgba(130, 70, 230, 0.70)", ring: "rgba(130, 70, 230, 0.28)",
   },
   {
     name: "Instagram", url: "https://www.instagram.com/purush_o7", icon: <IconInstagram />,
-    delay: 300, baseBg: "rgba(225, 48, 108, 0.12)", glow: "rgba(225, 48, 108, 0.70)", ring: "rgba(225, 48, 108, 0.28)",
+    delay: 300, initRot: { x: 20,  y: 10,  z: 30  },
+    baseBg: "rgba(225, 48, 108, 0.12)", glow: "rgba(225, 48, 108, 0.70)", ring: "rgba(225, 48, 108, 0.28)",
   },
 ] as const
 
-type Rot = { x: number; y: number; z: number }
-const DEFAULT_LAND: Rot = { x: 15, y: -20, z: 8 }
-const DEFAULT_DROP: Rot = { x: -120, y: 30, z: 20 }
-
-function randLand(): Rot {
-  return { x: (Math.random() - 0.5) * 60, y: (Math.random() - 0.5) * 100, z: (Math.random() - 0.5) * 50 }
-}
-function randDrop(): Rot {
-  return { x: -100 - Math.random() * 100, y: (Math.random() - 0.5) * 200, z: (Math.random() - 0.5) * 120 }
-}
-function freshRots() { return CUBES.map(() => ({ land: randLand(), drop: randDrop() })) }
-
 interface CubeProps {
   name: string; url: string; icon: React.ReactNode
-  delay: number; fallen: boolean; land: Rot; drop: Rot
+  delay: number; initRot: { x: number; y: number; z: number }
   baseBg: string; glow: string; ring: string; noScale?: boolean
 }
 
-function Cube({ name, url, icon, delay, fallen, land, drop, baseBg, glow, ring, noScale }: CubeProps) {
+function Cube({ name, url, icon, delay, initRot, baseBg, glow, ring, noScale }: CubeProps) {
   const [hovered, setHovered] = useState(false)
-  const controls = useAnimation()
   const d = delay / 1000
 
-  // Incommensurate periods per axis → continuous, apparently random tumble
   const spinDur = {
-    x: 23 + delay * 0.02,   // 23 / 26 / 29 s
-    y: 17 + delay * 0.015,  // 17 / 19 / 21.5 s
-    z: 31 + delay * 0.025,  // 31 / 34.75 / 38.5 s
+    x: 23 + delay * 0.02,
+    y: 17 + delay * 0.015,
+    z: 31 + delay * 0.025,
   }
-
-  useEffect(() => {
-    let cancelled = false
-
-    if (fallen) {
-      // Phase 1 — spring fall to landed orientation
-      controls.start({
-        y: 0,
-        rotateX: land.x, rotateY: land.y, rotateZ: land.z,
-        transition: { type: "spring", stiffness: 52, damping: 12, delay: d },
-      }).then(() => {
-        if (cancelled) return
-        // Phase 2 — slow continuous tumble using incommensurate axis speeds
-        controls.start({
-          rotateX: [land.x, land.x + 360],
-          rotateY: [land.y, land.y + 360],
-          rotateZ: [land.z, land.z + 360],
-          transition: {
-            rotateX: { repeat: Infinity, duration: spinDur.x, ease: "linear" },
-            rotateY: { repeat: Infinity, duration: spinDur.y, ease: "linear" },
-            rotateZ: { repeat: Infinity, duration: spinDur.z, ease: "linear" },
-          },
-        })
-      })
-    } else {
-      // Instant reset off-screen
-      controls.start({
-        y: -440,
-        rotateX: drop.x, rotateY: drop.y, rotateZ: drop.z,
-        transition: { duration: 0 },
-      })
-    }
-
-    return () => { cancelled = true }
-  }, [fallen, land.x, land.y, land.z, drop.x, drop.y, drop.z, d])
 
   return (
     <motion.a
@@ -122,9 +75,18 @@ function Cube({ name, url, icon, delay, fallen, land, drop, baseBg, glow, ring, 
       onHoverEnd={() => setHovered(false)}
     >
       <motion.div
-        animate={controls}
+        animate={{
+          rotateX: [initRot.x, initRot.x + 360],
+          rotateY: [initRot.y, initRot.y + 360],
+          rotateZ: [initRot.z, initRot.z + 360],
+        }}
+        transition={{
+          rotateX: { repeat: Infinity, duration: spinDur.x, ease: "linear", delay: d },
+          rotateY: { repeat: Infinity, duration: spinDur.y, ease: "linear", delay: d },
+          rotateZ: { repeat: Infinity, duration: spinDur.z, ease: "linear", delay: d },
+          scale:   { type: "spring", stiffness: 280, damping: 18 },
+        }}
         whileHover={noScale ? {} : { scale: 1.10 }}
-        transition={{ scale: { type: "spring", stiffness: 280, damping: 18 } }}
         style={{
           width: SIDE, height: SIDE,
           position: "relative",
@@ -153,15 +115,9 @@ function Cube({ name, url, icon, delay, fallen, land, drop, baseBg, glow, ring, 
       </motion.div>
 
       <motion.span
-        className="font-mono text-[10px] tracking-[0.25em] uppercase"
-        animate={{
-          opacity: fallen ? 1 : 0,
-          color: hovered ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.28)",
-        }}
-        transition={{
-          opacity: fallen ? { delay: d + 0.5, duration: 0.4 } : { duration: 0 },
-          color: { duration: 0.25 },
-        }}
+        className="font-mono text-xs tracking-[0.25em] uppercase"
+        animate={{ color: hovered ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.28)" }}
+        transition={{ color: { duration: 0.25 } }}
       >
         {name}
       </motion.span>
@@ -170,75 +126,34 @@ function Cube({ name, url, icon, delay, fallen, land, drop, baseBg, glow, ring, 
 }
 
 export function SocialCubes() {
-  const vh = typeof window !== "undefined" ? window.innerHeight : 800
-  const p  = useScrollProgress(vh, vh)
-
-  const [fallen, setFallen]   = useState(false)
-  const [rots, setRots]       = useState<ReturnType<typeof freshRots>>(() =>
-    CUBES.map(() => ({ land: DEFAULT_LAND, drop: DEFAULT_DROP }))
-  )
-  const prevFallen = useRef(false)
-
-  useEffect(() => { setRots(freshRots()) }, [])
-
-  useEffect(() => {
-    const next = p >= 0.75
-    if (next && !prevFallen.current) setRots(freshRots())
-    if (!next && prevFallen.current) setFallen(false)
-    if (next && !fallen) setFallen(true)
-    prevFallen.current = next
-  }, [p, fallen])
-
-  const li = CUBES[0], gh = CUBES[1], ig = CUBES[2]
-
   return (
     <div className="flex flex-col items-center justify-center w-full h-full gap-6">
 
-      {/* Header — slides up on land */}
-      <motion.div
-        className="flex flex-col items-center gap-2"
-        animate={{ opacity: fallen ? 1 : 0, y: fallen ? 0 : 14 }}
-        transition={fallen
-          ? { opacity: { delay: 0.7, duration: 0.5 }, y: { delay: 0.7, type: "spring", stiffness: 180, damping: 22 } }
-          : { duration: 0 }}
-      >
-        <p className="font-mono text-xs tracking-[0.3em] uppercase text-white/30">Find me on</p>
-        <p className="font-mono text-[10px] tracking-widest uppercase text-white/20">
+      <div className="flex flex-col items-center gap-2">
+        <p className="font-mono text-sm tracking-[0.3em] uppercase text-white/30">Find me on</p>
+        <p className="font-mono text-xs tracking-widest uppercase text-white/20">
           Open to contribute to open source
         </p>
-      </motion.div>
+      </div>
 
       <div className="flex flex-col items-center">
 
-        {/* LinkedIn — top */}
-        <Cube {...li} fallen={fallen}
-          land={rots[0]?.land ?? DEFAULT_LAND} drop={rots[0]?.drop ?? DEFAULT_DROP} noScale />
+        <Cube {...CUBES[0]} noScale />
 
         <div style={{ height: 20 }} />
 
-        {/* GitHub + Instagram — V formation */}
         <div style={{ display: "flex", alignItems: "flex-end", gap: 56 }}>
-          <Cube {...gh} fallen={fallen}
-            land={rots[1]?.land ?? DEFAULT_LAND} drop={rots[1]?.drop ?? DEFAULT_DROP} />
-          <Cube {...ig} fallen={fallen}
-            land={rots[2]?.land ?? DEFAULT_LAND} drop={rots[2]?.drop ?? DEFAULT_DROP} />
+          <Cube {...CUBES[1]} />
+          <Cube {...CUBES[2]} />
         </div>
 
-        {/* Floor line */}
-        <motion.div
-          animate={{ opacity: fallen ? 1 : 0, scaleX: fallen ? 1 : 0.2 }}
-          transition={fallen
-            ? { opacity: { delay: 1.1, duration: 0.4 }, scaleX: { delay: 1.1, type: "spring", stiffness: 120, damping: 20 } }
-            : { duration: 0 }}
+        <div
           style={{
             marginTop: 18, width: 360, height: 1,
             background: "linear-gradient(to right, transparent, rgba(255,255,255,0.20) 22%, rgba(255,255,255,0.20) 78%, transparent)",
-            transformOrigin: "center",
           }}
         />
-        <motion.div
-          animate={{ opacity: fallen ? 1 : 0 }}
-          transition={fallen ? { delay: 1.15, duration: 0.5 } : { duration: 0 }}
+        <div
           style={{ width: 360, height: 40, background: "linear-gradient(to bottom, rgba(255,255,255,0.025), transparent)" }}
         />
 
