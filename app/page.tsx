@@ -5,12 +5,13 @@ import { SocialCubes }        from "./_components/sections/social-cubes"
 import { ProjectsSection }    from "./_components/sections/projects-section"
 import { ExperienceSection }  from "./_components/experience"
 import { CylinderSection }    from "./_components/sections/cylinder-section"
+import { FooterSection }      from "./_components/sections/footer-section"
 import { ScrollSnap }         from "./_components/scroll-snap"
 import { DEMO_CARDS }         from "./_components/cylinder/cards/data"
 
 // 9 fixed snaps (0–8: nav + experience + cylinder reveal)
-// + 1 approach snap + 1 snap per orbit card
-const SECTIONS = 9 + DEMO_CARDS.length + 1
+// + 1 approach snap + 1 snap per orbit card + 1 footer
+const SECTIONS = 9 + DEMO_CARDS.length + 1 + 1
 
 export default function Home() {
   return (
@@ -46,6 +47,9 @@ export default function Home() {
 
       {/* ── Cylinder — revealed on scroll 400vh → 500vh ──────────────────── */}
       <CylinderSection />
+
+      {/* ── Footer — peacock canvas + contact, last snap ─────────────────── */}
+      <FooterSection triggerVh={SECTIONS - 1} />
 
     </div>
   )
