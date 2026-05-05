@@ -1,83 +1,11 @@
 "use client"
 
-import { useRef, useEffect } from "react"
-import Image from "next/image"
-import { useScrollProgress } from "../../_hooks/use-scroll-progress"
+import Image                          from "next/image"
+import { motion }                   from "framer-motion"
+import { useState, useRef, useEffect } from "react"
+import { useScrollProgress }          from "../../_hooks/use-scroll-progress"
 
-// ── Mouse color-trail canvas ───────────────────────────────────────────────────
-
-function useColorTrail(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext("2d")!
-    let hue = 160   // start at teal
-    let animId = 0
-
-    type Particle = { x: number; y: number; hue: number; size: number; alpha: number }
-    let particles: Particle[] = []
-
-    function resize() {
-      const rect = canvas!.getBoundingClientRect()
-      canvas!.width  = rect.width
-      canvas!.height = rect.height
-    }
-
-    function onMouseMove(e: MouseEvent) {
-      const rect = canvas!.getBoundingClientRect()
-      const mx = e.clientX - rect.left
-      const my = e.clientY - rect.top
-
-      // Scatter 4 brush dots around pointer
-      for (let k = 0; k < 4; k++) {
-        const scatter = 14
-        particles.push({
-          x:     mx + (Math.random() - 0.5) * scatter,
-          y:     my + (Math.random() - 0.5) * scatter,
-          hue,
-          size:  18 + Math.random() * 16,
-          alpha: 0.55 + Math.random() * 0.30,
-        })
-      }
-      hue = (hue + 4) % 360
-      if (particles.length > 600) particles.splice(0, 100)
-    }
-
-    function render() {
-      ctx.clearRect(0, 0, canvas!.width, canvas!.height)
-
-      for (const p of particles) {
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size)
-        g.addColorStop(0, `hsla(${p.hue},100%,55%,${p.alpha})`)
-        g.addColorStop(1, `hsla(${p.hue},100%,55%,0)`)
-        ctx.fillStyle = g
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fill()
-        p.alpha *= 0.968   // slow fade
-      }
-      particles = particles.filter(p => p.alpha > 0.004)
-
-      animId = requestAnimationFrame(render)
-    }
-
-    resize()
-    const ro = new ResizeObserver(resize)
-    ro.observe(canvas)
-
-    canvas.addEventListener("mousemove", onMouseMove)
-    render()
-
-    return () => {
-      canvas.removeEventListener("mousemove", onMouseMove)
-      cancelAnimationFrame(animId)
-      ro.disconnect()
-    }
-  }, [canvasRef])
-}
-
-// ── Icon components ───────────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -97,108 +25,185 @@ const MailIcon = () => (
   </svg>
 )
 
-// ── Section ───────────────────────────────────────────────────────────────────
+// ── Data ──────────────────────────────────────────────────────────────────────
 
 const LINKS = [
-  { label: "GitHub",   href: "https://github.com/purush-o7",                      icon: <GithubIcon />   },
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/purush-o7/",             icon: <LinkedInIcon /> },
-  { label: "Email",    href: "mailto:dev.coreops26@gmail.com",                     icon: <MailIcon />     },
+  { label: "GitHub",   href: "https://github.com/purush-o7",           icon: <GithubIcon />   },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/purush-o7/", icon: <LinkedInIcon /> },
+  { label: "Email",    href: "mailto:dev.coreops26@gmail.com",          icon: <MailIcon />     },
 ]
+
+// Peacock colour stops cycling through teal → purple → gold → green
+const COLORS = [
+  "rgba(0,212,255,0.55)",
+  "rgba(120,0,255,0.55)",
+  "rgba(255,200,0,0.55)",
+  "rgba(0,255,160,0.55)",
+  "rgba(0,212,255,0.55)",
+]
+
+// ── Grid panel with cursor spotlight ─────────────────────────────────────────
+
+const GRID  = 72
+const DECAY = 0.965   // opacity multiplier per frame
+
+function GridPanel() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const cells     = useRef<Map<string, number>>(new Map()) // key → opacity
+  const rafId     = useRef(0)
+
+  useEffect(() => {
+    const canvas = canvasRef.current!
+    const ctx    = canvas.getContext("2d")!
+
+    function resize() {
+      const r = canvas.parentElement!.getBoundingClientRect()
+      canvas.width  = r.width
+      canvas.height = r.height
+    }
+    resize()
+    const ro = new ResizeObserver(resize)
+    ro.observe(canvas.parentElement!)
+
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      for (const [key, op] of cells.current) {
+        const [col, row] = key.split(",").map(Number)
+        const newOp = op * DECAY
+        if (newOp < 0.005) { cells.current.delete(key); continue }
+        cells.current.set(key, newOp)
+
+        ctx.fillStyle = `rgba(255,255,255,${newOp * 0.18})`
+        ctx.fillRect(col * GRID + 1, row * GRID + 1, GRID - 1, GRID - 1)
+      }
+
+      rafId.current = requestAnimationFrame(tick)
+    }
+    tick()
+
+    return () => { cancelAnimationFrame(rafId.current); ro.disconnect() }
+  }, [])
+
+  function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    const r   = e.currentTarget.getBoundingClientRect()
+    const col = Math.floor((e.clientX - r.left) / GRID)
+    const row = Math.floor((e.clientY - r.top)  / GRID)
+    cells.current.set(`${col},${row}`, 1)
+  }
+
+  return (
+    <div
+      className="w-[45%] h-full flex flex-col justify-center px-14 gap-8
+                 border-l border-white/[0.06] relative overflow-hidden"
+      style={{
+        backgroundImage: `
+          linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)
+        `,
+        backgroundSize: `${GRID}px ${GRID}px`,
+      }}
+      onMouseMove={onMouseMove}
+    >
+      <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" />
+
+      {/* Content sits above the grid */}
+      <div className="relative z-10 flex flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <p className="font-mono text-[10px] tracking-[0.35em] uppercase text-white/30">
+            available for opportunities
+          </p>
+          <h2 className="text-4xl font-bold text-white leading-tight">
+            Let&apos;s build<br />
+            <span className="text-transparent bg-clip-text
+                             bg-gradient-to-r from-cyan-400 to-violet-400">
+              something great.
+            </span>
+          </h2>
+        </div>
+
+        <p className="text-white/50 text-sm leading-relaxed max-w-xs">
+          Full-stack developer &amp; ML engineer. I blend systems thinking
+          with creative interfaces — reach out if you&apos;d like to
+          collaborate.
+        </p>
+
+        <div className="flex flex-col gap-3">
+          {LINKS.map(({ label, href, icon }) => (
+            <a
+              key={label}
+              href={href}
+              target={href.startsWith("mailto") ? undefined : "_blank"}
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 group w-fit"
+            >
+              <span className="text-white/30 group-hover:text-cyan-400 transition-colors duration-200">
+                {icon}
+              </span>
+              <span className="font-mono text-xs tracking-[0.2em] uppercase
+                               text-white/40 group-hover:text-white/80
+                               transition-colors duration-200">
+                {label}
+              </span>
+            </a>
+          ))}
+        </div>
+
+        <div className="pt-6 border-t border-white/[0.07]">
+          <p className="font-mono text-[10px] tracking-widest uppercase text-white/20">
+            Purushottam Reddy Chinthakuntla · 2025
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Section ───────────────────────────────────────────────────────────────────
 
 interface Props { triggerVh: number }
 
 export function FooterSection({ triggerVh }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useColorTrail(canvasRef)
-
   const p = useScrollProgress(
-    typeof window !== "undefined" ? (triggerVh - 1) * window.innerHeight + 10 : 99999,
-    typeof window !== "undefined" ?  triggerVh      * window.innerHeight - 10 : 99999,
+    typeof window !== "undefined" ? window.innerHeight : 800,
+    typeof window !== "undefined" ? (triggerVh - 1) * window.innerHeight : 99999,
   )
 
   return (
     <div
-      className="fixed inset-0 overflow-hidden"
+      className="fixed inset-0 overflow-hidden bg-[#07070f]"
       style={{
-        zIndex:    13,
-        opacity:   p,
+        zIndex:        13,
+        transform:     `translateY(${(1 - p) * 100}vh)`,
+        opacity:       p,
+        willChange:    "transform, opacity",
         pointerEvents: p > 0.05 ? "auto" : "none",
       }}
     >
       <div className="flex h-full">
 
-        {/* ── Left: peacock image + color-trail canvas ──────────────────── */}
-        <div className="relative w-[55%] h-full bg-white overflow-hidden">
+        {/* ── Left: peacock image + framer colour wash ──────────────────── */}
+        <div className="relative w-[55%] h-full overflow-hidden bg-[#07070f]">
+          {/* Base: inverted line art — white lines on dark, same as campus */}
           <Image
             src="/peacock.png"
             alt="Peacock line art"
             fill
-            style={{ objectFit: "cover", objectPosition: "center" }}
+            sizes="55vw"
+            style={{ objectFit: "cover", objectPosition: "center", filter: "invert(1)" }}
             draggable={false}
           />
-          {/* Canvas sits above image; multiply blend = colors paint the white areas */}
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 w-full h-full"
-            style={{ mixBlendMode: "multiply", cursor: "crosshair" }}
+
+          {/* Colour wash: cycles through peacock hues via mix-blend-mode color */}
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            style={{ mixBlendMode: "color" }}
+            animate={{ backgroundColor: COLORS }}
+            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
           />
-          <p className="absolute bottom-5 left-1/2 -translate-x-1/2
-                        font-mono text-[10px] tracking-[0.28em] uppercase
-                        text-black/25 select-none pointer-events-none">
-            hover to paint
-          </p>
         </div>
 
-        {/* ── Right: footer content ─────────────────────────────────────── */}
-        <div className="w-[45%] h-full bg-[#07070f] flex flex-col justify-center px-14 gap-8">
-
-          <div className="flex flex-col gap-2">
-            <p className="font-mono text-[10px] tracking-[0.35em] uppercase text-white/30">
-              available for opportunities
-            </p>
-            <h2 className="text-4xl font-bold text-white leading-tight">
-              Let&apos;s build<br />
-              <span className="text-transparent bg-clip-text
-                               bg-gradient-to-r from-cyan-400 to-violet-400">
-                something great.
-              </span>
-            </h2>
-          </div>
-
-          <p className="text-white/50 text-sm leading-relaxed max-w-xs">
-            Full-stack developer &amp; ML engineer. I blend systems thinking
-            with creative interfaces — reach out if you&apos;d like to
-            collaborate.
-          </p>
-
-          <div className="flex flex-col gap-3">
-            {LINKS.map(({ label, href, icon }) => (
-              <a
-                key={label}
-                href={href}
-                target={href.startsWith("mailto") ? undefined : "_blank"}
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 group w-fit"
-              >
-                <span className="text-white/30 group-hover:text-cyan-400 transition-colors duration-200">
-                  {icon}
-                </span>
-                <span className="font-mono text-xs tracking-[0.2em] uppercase
-                                 text-white/40 group-hover:text-white/80
-                                 transition-colors duration-200">
-                  {label}
-                </span>
-              </a>
-            ))}
-          </div>
-
-          <div className="mt-4 pt-6 border-t border-white/[0.07]">
-            <p className="font-mono text-[10px] tracking-widest uppercase text-white/20">
-              Purushottam Reddy Chinthakuntla · 2025
-            </p>
-          </div>
-
-        </div>
+        <GridPanel />
       </div>
     </div>
   )
