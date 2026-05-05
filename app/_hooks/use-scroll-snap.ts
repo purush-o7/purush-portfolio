@@ -2,13 +2,20 @@
 
 import { useEffect, useRef } from "react"
 
-const ANIM_MS     = 900   // animation duration
-const WHEELEND_MS = 200   // idle time after last momentum tick before unlocking
-const DELTA_MIN   = 10    // minimum |deltaY| to count as intentional (filters 1-3px tails)
-const TOUCH_MIN   = 50    // px swipe needed on touch
+const ANIM_MS      = 900    // snap animation duration (ms)
+const ANIM_MS_TOUCH = 680   // slightly snappier on touch
+const WHEELEND_MS  = 200    // idle window after momentum before unlock
+const DELTA_MIN    = 10     // minimum |deltaY| for intentional wheel tick
+const TOUCH_MIN    = 35     // px — distance threshold (slow deliberate drag)
+const VEL_SNAP     = 0.3    // px/ms — velocity threshold (quick flick)
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+// Ease-out cubic — feels more like native iOS deceleration on touch
+function easeOutCubic(t: number) {
+  return 1 - Math.pow(1 - t, 3)
 }
 
 export function useScrollSnap(sections: number) {
@@ -17,20 +24,26 @@ export function useScrollSnap(sections: number) {
   const animDone      = useRef(false)
   const wheelEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const touchStartY   = useRef(0)
+  const touchStartT   = useRef(0)   // timestamp of touchstart (ms)
   const rafRef        = useRef<number | null>(null)
 
   useEffect(() => {
     current.current = Math.round(window.scrollY / window.innerHeight)
 
-    function animateScroll(to: number, onDone: () => void) {
+    function animateScroll(
+      to:     number,
+      onDone: () => void,
+      ms    = ANIM_MS,
+      ease  = easeInOutCubic,
+    ) {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
       const from  = window.scrollY
       const delta = to - from
       const start = performance.now()
 
       function tick(now: number) {
-        const t = Math.min((now - start) / ANIM_MS, 1)
-        window.scrollTo(0, from + delta * easeInOutCubic(t))
+        const t = Math.min((now - start) / ms, 1)
+        window.scrollTo(0, from + delta * ease(t))
         if (t < 1) {
           rafRef.current = requestAnimationFrame(tick)
         } else {
@@ -47,7 +60,7 @@ export function useScrollSnap(sections: number) {
       animDone.current = false
     }
 
-    function goTo(idx: number) {
+    function goTo(idx: number, ms = ANIM_MS, ease = easeInOutCubic) {
       const target = Math.max(0, Math.min(idx, sections - 1))
       if (target === current.current) return
       current.current  = target
@@ -56,12 +69,9 @@ export function useScrollSnap(sections: number) {
       if (wheelEndTimer.current) clearTimeout(wheelEndTimer.current)
 
       animateScroll(target * window.innerHeight, () => {
-        // Animation finished — enter wheel-end window.
-        // Momentum ticks will keep resetting this timer; intentional scrolls
-        // bypass it (see onWheel below).
         animDone.current = true
         wheelEndTimer.current = setTimeout(unlock, WHEELEND_MS)
-      })
+      }, ms, ease)
     }
 
     function onWheel(e: WheelEvent) {
@@ -72,20 +82,18 @@ export function useScrollSnap(sections: number) {
 
       if (animDone.current) {
         if (intentional) {
-          // Deliberate scroll after animation — navigate immediately
           if (wheelEndTimer.current) clearTimeout(wheelEndTimer.current)
           unlock()
           goTo(current.current + (e.deltaY > 0 ? 1 : -1))
         } else {
-          // Momentum tail — push the unlock window further
           if (wheelEndTimer.current) clearTimeout(wheelEndTimer.current)
           wheelEndTimer.current = setTimeout(unlock, WHEELEND_MS)
         }
         return
       }
 
-      if (locked.current) return    // animation still running
-      if (!intentional)   return    // tiny tick before first scroll
+      if (locked.current) return
+      if (!intentional)   return
 
       goTo(current.current + (e.deltaY > 0 ? 1 : -1))
     }
@@ -93,14 +101,32 @@ export function useScrollSnap(sections: number) {
     function onTouchStart(e: TouchEvent) {
       if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
       touchStartY.current = e.touches[0].clientY
+      touchStartT.current = performance.now()
+    }
+
+    // Prevent browser native scroll during swipes so inertia can't move
+    // scrollY past the current section before our snap takes over.
+    function onTouchMove(e: TouchEvent) {
+      if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
+      e.preventDefault()
     }
 
     function onTouchEnd(e: TouchEvent) {
       if (locked.current) return
       if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
-      const delta = touchStartY.current - e.changedTouches[0].clientY
-      if (Math.abs(delta) < TOUCH_MIN) return
-      goTo(current.current + (delta > 0 ? 1 : -1))
+
+      const endY    = e.changedTouches[0].clientY
+      const delta   = touchStartY.current - endY          // +ve = swipe up, -ve = swipe down
+      const elapsed = performance.now() - touchStartT.current
+      // px/ms — average velocity over the whole gesture
+      const velocity = elapsed > 0 ? Math.abs(delta) / elapsed : 0
+
+      const isFlick = velocity >= VEL_SNAP               // quick flick, any distance
+      const isDrag  = Math.abs(delta) >= TOUCH_MIN        // slow deliberate drag
+
+      if (!isFlick && !isDrag) return                     // accidental touch, ignore
+
+      goTo(current.current + (delta > 0 ? 1 : -1), ANIM_MS_TOUCH, easeOutCubic)
     }
 
     function onKeyDown(e: KeyboardEvent) {
@@ -116,6 +142,7 @@ export function useScrollSnap(sections: number) {
 
     window.addEventListener("wheel",      onWheel,      { passive: false })
     window.addEventListener("touchstart", onTouchStart, { passive: true  })
+    window.addEventListener("touchmove",  onTouchMove,  { passive: false })
     window.addEventListener("touchend",   onTouchEnd,   { passive: true  })
     window.addEventListener("keydown",    onKeyDown)
 
@@ -124,6 +151,7 @@ export function useScrollSnap(sections: number) {
       if (wheelEndTimer.current)      clearTimeout(wheelEndTimer.current)
       window.removeEventListener("wheel",      onWheel)
       window.removeEventListener("touchstart", onTouchStart)
+      window.removeEventListener("touchmove",  onTouchMove)
       window.removeEventListener("touchend",   onTouchEnd)
       window.removeEventListener("keydown",    onKeyDown)
     }

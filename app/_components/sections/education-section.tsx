@@ -30,7 +30,9 @@ export function EducationSection() {
         The black polygon extends far right with overflow:visible so the
         teeth visually cover the border area.
       */}
+      {/* Hidden on mobile — horizontal zigzag lives in EducationRightCard instead */}
       <div
+        className="hidden md:block"
         style={{
           position: "absolute",
           top: 0,

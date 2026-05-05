@@ -10,7 +10,7 @@ export function CampusArt() {
         className="object-cover object-center"
         style={{ filter: "invert(1)" }}
         priority
-        sizes="60vw"
+        sizes="(max-width: 768px) 100vw, 60vw"
       />
     </div>
   )
