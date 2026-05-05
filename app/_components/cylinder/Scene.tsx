@@ -24,10 +24,11 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
   const mouseRaw    = useRef({ x: 0, y: 0 })
   const mouseSmooth = useRef({ x: 0, y: 0 })
 
-  // Scroll-driven rotation — momentum flywheel
-  const rotVel     = useRef(0.003)   // radians/frame — keeps spinning once started
+  // Constant-speed rotation — scroll only flips direction
+  const ROT_SPEED   = 0.003          // radians/frame, fixed forever
+  const rotDir      = useRef(1)      // +1 or -1
   const lastScrollY = useRef(0)
-  const rotY       = useRef(0)
+  const rotY        = useRef(0)
 
   useEffect(() => {
     lastScrollY.current = window.scrollY
@@ -35,8 +36,8 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
       const vh = window.innerHeight
       const dy = window.scrollY - lastScrollY.current
       lastScrollY.current = window.scrollY
-      rotVel.current += dy * 0.00012             // scroll nudges the flywheel
-      rotVel.current  = Math.max(-0.04, Math.min(0.04, rotVel.current)) // clamp
+      if (dy > 0) rotDir.current =  1            // scroll down → forward
+      if (dy < 0) rotDir.current = -1            // scroll up   → backward
       progressRef.current = Math.max(0, Math.min((window.scrollY - 8 * vh) / vh, 1))
     }
     function onMouse(e: MouseEvent) {
@@ -62,10 +63,9 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
     s.x += (r.x - s.x) * 0.04
     s.y += (r.y - s.y) * 0.04
 
-    // Cable group: flywheel rotation (scroll changes direction/speed, keeps spinning)
+    // Cable group: constant-speed rotation, direction set by scroll
     if (cableGroupRef.current) {
-      rotVel.current *= 0.9995                           // near-zero friction, never fully stops
-      rotY.current   += rotVel.current
+      rotY.current += ROT_SPEED * rotDir.current
       cableGroupRef.current.rotation.y = rotY.current
       cableGroupRef.current.position.x = s.x * 0.6
       cableGroupRef.current.position.y = s.y * 0.6
