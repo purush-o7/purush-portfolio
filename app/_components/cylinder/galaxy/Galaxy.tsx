@@ -59,7 +59,9 @@ export function Galaxy({ p }: { p: GalaxyParams }) {
     if (!ref.current) return
     const t = clock.getElapsedTime()
     ;(ref.current.material as THREE.ShaderMaterial).uniforms.uTime.value = t
-    ref.current.rotation.x = Math.sin(t * 0.15) * (10 * Math.PI / 180)
+    // Tilt disk nearly face-on so spiral arms wrap the cylinder
+    // and the galactic core glows from inside it
+    ref.current.rotation.x = -Math.PI * 0.45 + Math.sin(t * 0.15) * (8 * Math.PI / 180)
     ref.current.rotation.y = t * 0.03
   })
 

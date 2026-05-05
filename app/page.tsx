@@ -8,8 +8,9 @@ import { CylinderSection }    from "./_components/sections/cylinder-section"
 import { ScrollSnap }         from "./_components/scroll-snap"
 import { DEMO_CARDS }         from "./_components/cylinder/cards/data"
 
-// 9 fixed snaps (0–8: nav + experience + cylinder reveal) + 1 snap per orbit card
-const SECTIONS = 9 + DEMO_CARDS.length
+// 9 fixed snaps (0–8: nav + experience + cylinder reveal)
+// + 1 approach snap + 1 snap per orbit card
+const SECTIONS = 9 + DEMO_CARDS.length + 1
 
 export default function Home() {
   return (

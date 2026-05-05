@@ -24,7 +24,7 @@ export const DEF_GALAXY: GalaxyParams = {
 
 export const DEF_CABLE: CableParams = {
   count: 24, rStart: 100, height: 15.5,
-  waist: 1.35, twist: 0, arch: 2.55, armAngle: 26,
+  waist: 1.35, twist: 0.75, arch: 2.55, armAngle: 26,
   neonColor: "#00f5ff", haloColor: "#800dff", glowMult: 3.7,
 }
 

@@ -18,8 +18,8 @@ export function HelixCards({ onExpand }: Props) {
   useEffect(() => {
     function onScroll() {
       const vh = window.innerHeight
-      // N snaps for N cards → each card centers exactly at t=0.5 on its own snap
-      progressRef.current = Math.max(0, Math.min((window.scrollY - 9 * vh) / (N * vh), 1))
+      // N+1 snaps: first snap is "approach", each subsequent snap centers one card
+      progressRef.current = Math.max(0, Math.min((window.scrollY - 9 * vh) / ((N + 1) * vh), 1))
     }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
@@ -35,7 +35,8 @@ export function HelixCards({ onExpand }: Props) {
       const ex = expandRefs.current[i]
       if (!g || !d || !ex) return
 
-      const t_raw = (0.5 - i / N) + cp
+      // Offset by (i+1)/(N+1) so card 0 starts to the side and centres at snap 1
+      const t_raw = (0.5 - (i + 1) / (N + 1)) + cp
 
       if (t_raw < 0 || t_raw > 1) {
         g.position.set(0, t_raw < 0 ? -ORBIT_H - 5 : ORBIT_H + 5, 0)
