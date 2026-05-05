@@ -2,7 +2,7 @@
 
 import { useScrollSnap } from "../_hooks/use-scroll-snap"
 
-export function ScrollSnap() {
-  useScrollSnap()
+export function ScrollSnap({ sections }: { sections: number }) {
+  useScrollSnap(sections)
   return null
 }

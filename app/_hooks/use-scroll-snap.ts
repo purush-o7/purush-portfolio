@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react"
 
-const SECTIONS    = 5
 const ANIM_MS     = 900   // animation duration
 const WHEELEND_MS = 200   // idle time after last momentum tick before unlocking
 const DELTA_MIN   = 10    // minimum |deltaY| to count as intentional (filters 1-3px tails)
@@ -12,7 +11,7 @@ function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
-export function useScrollSnap() {
+export function useScrollSnap(sections: number) {
   const current       = useRef(0)
   const locked        = useRef(false)
   const animDone      = useRef(false)
@@ -49,7 +48,7 @@ export function useScrollSnap() {
     }
 
     function goTo(idx: number) {
-      const target = Math.max(0, Math.min(idx, SECTIONS - 1))
+      const target = Math.max(0, Math.min(idx, sections - 1))
       if (target === current.current) return
       current.current  = target
       locked.current   = true
@@ -126,5 +125,5 @@ export function useScrollSnap() {
       window.removeEventListener("touchend",   onTouchEnd)
       window.removeEventListener("keydown",    onKeyDown)
     }
-  }, [])
+  }, [sections])
 }
