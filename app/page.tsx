@@ -1,7 +1,7 @@
 import { HeroCard }            from "./_components/sections/hero-card"
 import { EducationSection }   from "./_components/sections/education-section"
 import { EducationRightCard } from "./_components/sections/education-right-card"
-import { SocialCubes }        from "./_components/sections/social-cubes"
+import { CareerTimeline }     from "./_components/sections/career-timeline"
 import { ProjectsSection }    from "./_components/sections/projects-section"
 import { ExperienceSection }  from "./_components/experience"
 import { CylinderSection }    from "./_components/sections/cylinder-section"
@@ -23,29 +23,27 @@ export default function Home() {
         <div key={i} style={{ height: "100vh" }} />
       ))}
 
-      {/* ── Campus art + zigzag border — full width on mobile, left 60% on md+ ── */}
-      <div className="fixed top-0 left-0 bottom-0 w-full md:w-3/5 z-10">
+      {/* ── Campus art — top 50% on mobile, full-height left 60% on md+ ── */}
+      <div className="fixed top-0 left-0 bottom-1/2 md:bottom-0 w-full md:w-3/5 z-10">
         <EducationSection />
       </div>
 
-      {/* ── Social cubes — hidden on mobile, right 40% on md+ ────────────────── */}
-      <div className="fixed top-0 right-0 bottom-0 w-2/5 z-10 hidden md:block">
-        <SocialCubes />
-      </div>
+      {/* ── Career timeline — self-positioned, bottom 50% mobile / right 40% desktop ── */}
+      <CareerTimeline />
 
-      {/* ── Education right panel — lifts on scroll 100vh → 200vh ────────── */}
+      {/* ── Education right panel — lifts on scroll 100vh → 200vh ──────── */}
       <EducationRightCard />
 
-      {/* ── Hero card — lifts on scroll 0 → 100vh ────────────────────────── */}
+      {/* ── Hero card — lifts on scroll 0 → 100vh ──────────────────────── */}
       <HeroCard />
 
-      {/* ── Projects (KovilLens) — slides up on scroll 200vh → 300vh ──────── */}
+      {/* ── Projects (KovilLens) — slides up on scroll 200vh → 300vh ───── */}
       <ProjectsSection />
 
-      {/* ── Experience — slides up on scroll 300vh → 400vh ───────────────── */}
+      {/* ── Experience — slides up on scroll 300vh → 400vh ─────────────── */}
       <ExperienceSection />
 
-      {/* ── Cylinder — revealed on scroll 400vh → 500vh ──────────────────── */}
+      {/* ── Cylinder — revealed on scroll 400vh → 500vh ─────────────────── */}
       <CylinderSection />
 
       {/* ── Footer — peacock canvas + contact, last snap ─────────────────── */}

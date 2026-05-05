@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
+import { useMobile } from "../../_hooks/use-mobile"
 
 const SIDE = 120
 const HALF = SIDE / 2
@@ -126,6 +127,10 @@ function Cube({ name, url, icon, delay, initRot, baseBg, glow, ring, noScale }: 
 }
 
 export function SocialCubes() {
+  const isMobile = useMobile()
+  const bottomGap  = isMobile ? 20 : 56
+  const lineWidth  = isMobile ? 240 : 360
+
   return (
     <div className="flex flex-col items-center justify-center w-full h-full gap-6">
 
@@ -142,19 +147,19 @@ export function SocialCubes() {
 
         <div style={{ height: 20 }} />
 
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 56 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: bottomGap }}>
           <Cube {...CUBES[1]} />
           <Cube {...CUBES[2]} />
         </div>
 
         <div
           style={{
-            marginTop: 18, width: 360, height: 1,
+            marginTop: 18, width: lineWidth, height: 1,
             background: "linear-gradient(to right, transparent, rgba(255,255,255,0.20) 22%, rgba(255,255,255,0.20) 78%, transparent)",
           }}
         />
         <div
-          style={{ width: 360, height: 40, background: "linear-gradient(to bottom, rgba(255,255,255,0.025), transparent)" }}
+          style={{ width: lineWidth, height: 40, background: "linear-gradient(to bottom, rgba(255,255,255,0.025), transparent)" }}
         />
 
       </div>
