@@ -25,10 +25,11 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
   const mouseSmooth = useRef({ x: 0, y: 0 })
 
   // Constant-speed rotation — scroll only flips direction
-  const ROT_SPEED   = 0.003          // radians/frame, fixed forever
-  const rotDir      = useRef(1)      // +1 or -1
-  const lastScrollY = useRef(0)
-  const rotY        = useRef(0)
+  const ROT_SPEED    = 0.003         // radians/frame, fixed forever
+  const rotDir       = useRef(1)     // +1 or -1
+  const lastScrollY  = useRef(0)
+  const rotY         = useRef(0)
+  const rotYGalaxy   = useRef(0)
 
   useEffect(() => {
     lastScrollY.current = window.scrollY
@@ -71,11 +72,12 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
       cableGroupRef.current.position.y = s.y * 0.6
     }
 
-    // Galaxy group: deeper parallax — moves more, opposite direction
-    // gives clear depth separation from the cables
+    // Galaxy group: same scroll-driven direction, slower speed + parallax
     if (galaxyGroupRef.current) {
-      galaxyGroupRef.current.position.x = -s.x * 2.2
-      galaxyGroupRef.current.position.y = -s.y * 2.2
+      rotYGalaxy.current += ROT_SPEED * rotDir.current * 0.4
+      galaxyGroupRef.current.rotation.y  = rotYGalaxy.current
+      galaxyGroupRef.current.position.x  = -s.x * 2.2
+      galaxyGroupRef.current.position.y  = -s.y * 2.2
     }
   })
 
