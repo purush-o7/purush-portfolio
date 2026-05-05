@@ -15,26 +15,35 @@ export function ExperienceCard({ entry, index, total }: Props) {
       display: "flex",
       background: "#07070f",
     }}>
-      {/* Accent left bar */}
+      {/* Left accent bar */}
       <div style={{
-        position: "absolute", top: 0, left: 0, bottom: 0, width: 3,
-        background: `linear-gradient(180deg, ${entry.accent} 0%, transparent 100%)`,
-        zIndex: 1,
+        position: "absolute", top: 0, left: 0, bottom: 0,
+        width: 5, background: entry.accent,
+        zIndex: 2, pointerEvents: "none",
+      }} />
+      {/* Top bar — fades right so no hard cut when next card slides in */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0,
+        height: 5,
+        background: `linear-gradient(90deg, ${entry.accent} 0%, ${entry.accent}00 40%)`,
+        zIndex: 2, pointerEvents: "none",
+      }} />
+      {/* Bottom bar — same */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        height: 5,
+        background: `linear-gradient(90deg, ${entry.accent} 0%, ${entry.accent}00 40%)`,
+        zIndex: 2, pointerEvents: "none",
       }} />
 
-      {/* Right-edge shadow — hints at the card underneath */}
-      <div style={{
-        position: "absolute", top: 0, right: 0, bottom: 0, width: 60,
-        background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.45))",
-        zIndex: 1, pointerEvents: "none",
-      }} />
 
       {/* ── Left panel — identity (42%) ─────────────────────────── */}
       <div style={{
-        width: "42%", flexShrink: 0,
+        width: "42%", minWidth: "42vw", flexShrink: 0,
         padding: "56px 56px",
         display: "flex", flexDirection: "column", justifyContent: "center", gap: 20,
         borderRight: "1px solid rgba(255,255,255,0.06)",
+        whiteSpace: "nowrap",
       }}>
         {/* Counter */}
         <span style={{
@@ -88,7 +97,7 @@ export function ExperienceCard({ entry, index, total }: Props) {
 
       {/* ── Right panel — content (58%) ─────────────────────────── */}
       <div style={{
-        flex: 1, padding: "56px 60px 56px 52px",
+        flex: 1, minWidth: "50vw", padding: "56px 60px 56px 52px",
         display: "flex", flexDirection: "column", justifyContent: "center", gap: 28,
       }}>
         {/* Bullets */}
