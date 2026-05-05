@@ -377,6 +377,10 @@ export function TempleViewer() {
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
+  // Pinch-to-zoom refs
+  const pinchDistRef       = useRef<number | null>(null)
+  const pinchStartCamDist  = useRef(8)
+
   const handleGroupDown = useCallback((
     e: { clientX: number; clientY: number; stopPropagation: () => void },
     groupRef: React.RefObject<THREE.Group | null>,
@@ -392,20 +396,20 @@ export function TempleViewer() {
     <div
       data-no-scroll-snap="true"
       style={{
-        position:  isFullscreen ? "fixed" : "relative",
-        inset:     isFullscreen ? 0 : "auto",
-        zIndex:    isFullscreen ? 50 : "auto",
-        width:     "100%",
-        height:    "100%",
-        cursor:    activeGroup.current ? "grabbing" : "default",
-        background: "#07070f",
+        position:    isFullscreen ? "fixed" : "relative",
+        inset:       isFullscreen ? 0 : "auto",
+        zIndex:      isFullscreen ? 50 : "auto",
+        width:       "100%",
+        height:      "100%",
+        cursor:      activeGroup.current ? "grabbing" : "default",
+        background:  "#07070f",
+        touchAction: "none",
       }}
       onPointerMove={e => {
         if (!activeGroup.current) return
         const dx = e.clientX - dragStart.current.x
         const dy = e.clientY - dragStart.current.y
         activeGroup.current.rotation.y = dragStart.current.rotY + dx * 0.008
-        // Vertical drag lifts/lowers the camera — clamped so sky and ground floor stay visible
         cameraElevRef.current = Math.max(0.2, Math.min(5.0, dragStart.current.camY - dy * 0.005))
       }}
       onPointerUp={() => { activeGroup.current = null }}
@@ -413,6 +417,23 @@ export function TempleViewer() {
       onWheel={e => {
         cameraDistRef.current = Math.max(5, Math.min(15, cameraDistRef.current + e.deltaY * 0.01))
       }}
+      onTouchStart={e => {
+        if (e.touches.length === 2) {
+          activeGroup.current = null  // cancel single-finger drag when second finger arrives
+          const dx = e.touches[0].clientX - e.touches[1].clientX
+          const dy = e.touches[0].clientY - e.touches[1].clientY
+          pinchDistRef.current      = Math.sqrt(dx * dx + dy * dy)
+          pinchStartCamDist.current = cameraDistRef.current
+        }
+      }}
+      onTouchMove={e => {
+        if (e.touches.length !== 2 || pinchDistRef.current === null) return
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        const d  = Math.sqrt(dx * dx + dy * dy)
+        cameraDistRef.current = Math.max(5, Math.min(15, pinchStartCamDist.current * (pinchDistRef.current / d)))
+      }}
+      onTouchEnd={() => { pinchDistRef.current = null }}
     >
       <Canvas
         camera={{ position: [0, 2, 8], fov: 56 }}

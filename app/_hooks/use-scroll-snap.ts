@@ -91,11 +91,13 @@ export function useScrollSnap(sections: number) {
     }
 
     function onTouchStart(e: TouchEvent) {
+      if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
       touchStartY.current = e.touches[0].clientY
     }
 
     function onTouchEnd(e: TouchEvent) {
       if (locked.current) return
+      if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
       const delta = touchStartY.current - e.changedTouches[0].clientY
       if (Math.abs(delta) < TOUCH_MIN) return
       goTo(current.current + (delta > 0 ? 1 : -1))

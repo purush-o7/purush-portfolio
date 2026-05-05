@@ -23,13 +23,13 @@ export default function Home() {
         <div key={i} style={{ height: "100vh" }} />
       ))}
 
-      {/* ── Campus art + zigzag border — fixed left 60% ──────────────────── */}
-      <div className="fixed top-0 left-0 bottom-0 w-3/5 z-10">
+      {/* ── Campus art + zigzag border — full width on mobile, left 60% on md+ ── */}
+      <div className="fixed top-0 left-0 bottom-0 w-full md:w-3/5 z-10">
         <EducationSection />
       </div>
 
-      {/* ── Social cubes — fixed right 40% ───────────────────────────────── */}
-      <div className="fixed top-0 right-0 bottom-0 w-2/5 z-10">
+      {/* ── Social cubes — hidden on mobile, right 40% on md+ ────────────────── */}
+      <div className="fixed top-0 right-0 bottom-0 w-2/5 z-10 hidden md:block">
         <SocialCubes />
       </div>
 

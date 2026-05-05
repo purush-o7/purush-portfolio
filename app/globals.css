@@ -128,3 +128,5 @@
     @apply font-sans;
   }
 }
+
+.canvas-no-touch { touch-action: none; }

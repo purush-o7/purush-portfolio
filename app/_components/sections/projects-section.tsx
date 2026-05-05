@@ -5,6 +5,7 @@ import Image                           from "next/image"
 import { useState } from "react"
 import { motion, AnimatePresence }     from "framer-motion"
 import { useScrollProgress }           from "../../_hooks/use-scroll-progress"
+import { useMobile }                   from "../../_hooks/use-mobile"
 
 const TempleViewer = dynamic(
   () => import("../temple-viewer").then((m) => m.TempleViewer),
@@ -18,12 +19,14 @@ const IMAGES = [
   { src: "/projects/kovil-lens/screenshot-1.webp",  alt: "KovilLens — guided storytelling mode" },
   { src: "/projects/kovil-lens/screenshot-2.webp",  alt: "KovilLens — interactive analysis mode" },
   { src: "/projects/kovil-lens/screenshot-3.webp",  alt: "KovilLens — temple reconstruction" },
-  { src: "/projects/kovil-lens/site-visit-1.jpg",   alt: "Site visit — Moovar Kovil" },    // already optimal as JPEG
-  { src: "/projects/kovil-lens/site-visit-2.jpg",   alt: "Site visit — temple complex" },  // already optimal as JPEG
+  { src: "/projects/kovil-lens/site-visit-1.jpg",   alt: "Site visit — Moovar Kovil" },
+  { src: "/projects/kovil-lens/site-visit-2.jpg",   alt: "Site visit — temple complex" },
   { src: "/projects/kovil-lens/tooltips.webp",      alt: "KovilLens — UI tooltips" },
 ]
 
 export function ProjectsSection() {
+  const isMobile = useMobile()
+
   // Entry: slides up into view during scroll 2vh → 3vh
   const p = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
@@ -42,81 +45,102 @@ export function ProjectsSection() {
 
   return (
     <div
-      className="fixed inset-0 z-20 bg-[#07070f] flex overflow-hidden"
+      className="fixed inset-0 z-20 bg-[#07070f] overflow-hidden"
       style={{
         transform:  `translateY(${((1 - p) - exit) * 100}vh) scale(${0.97 + p * 0.03})`,
         opacity:    p,
         willChange: "transform, opacity",
+        display:    "flex",
+        flexDirection: isMobile ? "column-reverse" : "row",
       }}
     >
-      {/* ── Left: project info (40%) ──────────────────────────────────────── */}
-      <div className="w-2/5 h-full relative flex flex-col justify-center px-12 gap-7
-                      border-r border-white/[0.06] shrink-0 overflow-hidden">
+      {/* ── Info panel — bottom 40% on mobile, left 2/5 on desktop ─────────── */}
+      <div
+        className="relative flex flex-col justify-center overflow-hidden shrink-0"
+        style={{
+          width:        isMobile ? "100%" : "40%",
+          height:       isMobile ? "40%" : "100%",
+          padding:      isMobile ? "16px 20px" : "56px 48px",
+          gap:          isMobile ? 12 : 28,
+          borderTop:    isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
+          borderRight:  isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
 
-        {/* Hover image overlay */}
-        <AnimatePresence>
-          {hovered !== null && (
-            <motion.div
-              key={hovered}
-              className="absolute inset-0 z-10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Image
-                src={IMAGES[hovered].src}
-                alt={IMAGES[hovered].alt}
-                fill
-                className="object-cover"
-                sizes="40vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#07070f] via-[#07070f]/20 to-transparent" />
-              <motion.p
-                className="absolute bottom-8 left-8 right-8 font-mono text-xs
-                           tracking-widest uppercase text-white/45 line-clamp-1"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, duration: 0.2 }}
+        {/* Hover image overlay — desktop only */}
+        {!isMobile && (
+          <AnimatePresence>
+            {hovered !== null && (
+              <motion.div
+                key={hovered}
+                className="absolute inset-0 z-10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
               >
-                {IMAGES[hovered].alt}
-              </motion.p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <Image
+                  src={IMAGES[hovered].src}
+                  alt={IMAGES[hovered].alt}
+                  fill
+                  className="object-cover"
+                  sizes="40vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#07070f] via-[#07070f]/20 to-transparent" />
+                <motion.p
+                  className="absolute bottom-8 left-8 right-8 font-mono text-xs
+                             tracking-widest uppercase text-white/45 line-clamp-1"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.2 }}
+                >
+                  {IMAGES[hovered].alt}
+                </motion.p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
 
-        {/* Project info — fades on image hover */}
+        {/* Project info */}
         <motion.div
-          className="relative z-0 flex flex-col gap-7"
-          animate={{ opacity: hovered !== null ? 0 : 1 }}
+          className="relative z-0 flex flex-col"
+          style={{ gap: isMobile ? 10 : 28 }}
+          animate={{ opacity: (!isMobile && hovered !== null) ? 0 : 1 }}
           transition={{ duration: 0.22 }}
         >
-          <p className="font-mono text-sm tracking-[0.35em] uppercase text-white/30">
+          <p className="font-mono tracking-[0.35em] uppercase text-white/30"
+             style={{ fontSize: isMobile ? 9 : 14 }}>
             Final Year Research · IEEE Published
           </p>
 
           <h2 className="font-heading leading-[0.88] tracking-tight">
-            <span className="block text-7xl font-bold text-white">Kovil</span>
-            <span className="block text-7xl font-bold text-white/40">Lens</span>
+            <span className="block font-bold text-white"
+                  style={{ fontSize: isMobile ? 40 : 72 }}>Kovil</span>
+            <span className="block font-bold text-white/40"
+                  style={{ fontSize: isMobile ? 40 : 72 }}>Lens</span>
           </h2>
 
-          <div className="w-8 h-px bg-white/20" />
+          {!isMobile && <div className="w-8 h-px bg-white/20" />}
 
-          <p className="font-mono text-sm text-white/50 leading-[1.8] max-w-[300px]">
+          <p className="font-mono text-white/50 leading-[1.8]"
+             style={{ fontSize: isMobile ? 11 : 14, maxWidth: isMobile ? "none" : 300 }}>
             Mixed Reality on Microsoft HoloLens&nbsp;2 for digital preservation of Moovar
             Kovil — a 9th-century Chola temple complex in Tamil Nadu.
           </p>
 
-          <div className="flex flex-col gap-3">
-            <Row label="Published" value="IEEE ICVR 2025 · Wageningen" />
-            <Row label="Role"      value="Research Assistant · Feb – May 2023" />
-            <Row label="Impact"    value="~15 fps → 60 fps optimisation" />
-          </div>
+          {!isMobile && (
+            <div className="flex flex-col gap-3">
+              <Row label="Published" value="IEEE ICVR 2025 · Wageningen" />
+              <Row label="Role"      value="Research Assistant · Feb – May 2023" />
+              <Row label="Impact"    value="~15 fps → 60 fps optimisation" />
+            </div>
+          )}
 
           <div className="flex gap-2 flex-wrap">
             {["HoloLens 2", "Unity", "C#", "MRTK", "Mixed Reality"].map((t) => (
-              <span key={t} className="font-mono text-xs tracking-widest uppercase
-                                       text-white/30 border border-white/10 px-2 py-0.5 rounded-sm">
+              <span key={t} className="font-mono tracking-widest uppercase
+                                       text-white/30 border border-white/10 px-2 py-0.5 rounded-sm"
+                    style={{ fontSize: isMobile ? 8 : 12 }}>
                 {t}
               </span>
             ))}
@@ -126,7 +150,8 @@ export function ProjectsSection() {
             href="https://ieeexplore.ieee.org/abstract/document/11172645"
             target="_blank" rel="noopener noreferrer"
             className="relative inline-flex items-center overflow-hidden
-                       font-mono text-xs tracking-widest uppercase w-fit focus:outline-none"
+                       font-mono tracking-widest uppercase w-fit focus:outline-none"
+            style={{ fontSize: isMobile ? 9 : 12 }}
             onHoverStart={() => setDoiHovered(true)}
             onHoverEnd={() => setDoiHovered(false)}
             animate={{
@@ -169,24 +194,35 @@ export function ProjectsSection() {
         </motion.div>
       </div>
 
-      {/* ── Right: canvas 70% + strip 30% (60% total) ─────────────────────── */}
-      <div className="w-3/5 h-full flex flex-col">
-
-        <div className="relative" style={{ height: "70%" }}>
+      {/* ── Canvas + gallery — top 60% on mobile, right 3/5 on desktop ─────── */}
+      <div
+        className="flex flex-col"
+        style={{
+          width:  isMobile ? "100%" : "60%",
+          height: isMobile ? "60%" : "100%",
+          flex:   isMobile ? "none" : 1,
+        }}
+      >
+        {/* 3D canvas — fills available space */}
+        <div className="relative flex-1">
           <TempleViewer />
           <p className="absolute bottom-3 left-0 right-0 text-center font-mono text-xs
                          tracking-[0.3em] uppercase text-white/15 pointer-events-none select-none">
-            Drag · Scroll to zoom · Pan
+            {isMobile ? "Drag · Pinch to zoom" : "Drag · Scroll to zoom · Pan"}
           </p>
         </div>
 
         <div className="h-px bg-white/[0.06] shrink-0" />
 
         {/* Infinite right-to-left gallery */}
-        <div className="relative overflow-hidden" style={{
-          height: "30%",
-          background: "radial-gradient(ellipse 120% 80% at 60% 50%, #1a0a2e 0%, #0d0520 30%, #060412 60%, #07070f 100%)",
-        }}>
+        <div
+          className="relative overflow-hidden shrink-0"
+          style={{
+            height: isMobile ? "32%" : "30%",
+            background: "radial-gradient(ellipse 120% 80% at 60% 50%, #1a0a2e 0%, #0d0520 30%, #060412 60%, #07070f 100%)",
+          }}
+          data-no-scroll-snap="true"
+        >
           <style>{`
             @keyframes gallery-rtl {
               from { transform: translateX(0); }
@@ -205,7 +241,7 @@ export function ProjectsSection() {
           <div className="absolute inset-y-0 right-0 w-16 z-10 pointer-events-none
                           bg-gradient-to-l from-[#07070f] to-transparent" />
 
-          {/* Animated track — h-full anchors the height chain so child % heights resolve */}
+          {/* Animated track */}
           <div
             className="flex items-center gap-3 h-full"
             style={{

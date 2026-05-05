@@ -4,6 +4,7 @@ import Image                          from "next/image"
 import { motion }                   from "framer-motion"
 import { useState, useRef, useEffect } from "react"
 import { useScrollProgress }          from "../../_hooks/use-scroll-progress"
+import { useMobile }                  from "../../_hooks/use-mobile"
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -45,11 +46,11 @@ const COLORS = [
 // ── Grid panel with cursor spotlight ─────────────────────────────────────────
 
 const GRID  = 72
-const DECAY = 0.965   // opacity multiplier per frame
+const DECAY = 0.965
 
-function GridPanel() {
+function GridPanel({ isMobile }: { isMobile: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const cells     = useRef<Map<string, number>>(new Map()) // key → opacity
+  const cells     = useRef<Map<string, number>>(new Map())
   const rafId     = useRef(0)
 
   useEffect(() => {
@@ -92,11 +93,24 @@ function GridPanel() {
     cells.current.set(`${col},${row}`, 1)
   }
 
+  function onTouchMove(e: React.TouchEvent<HTMLDivElement>) {
+    const r   = e.currentTarget.getBoundingClientRect()
+    const touch = e.touches[0]
+    const col = Math.floor((touch.clientX - r.left) / GRID)
+    const row = Math.floor((touch.clientY - r.top)  / GRID)
+    cells.current.set(`${col},${row}`, 1)
+  }
+
   return (
     <div
-      className="w-[45%] h-full flex flex-col justify-center px-14 gap-8
-                 border-l border-white/[0.06] relative overflow-hidden"
+      className="relative overflow-hidden flex flex-col justify-center"
       style={{
+        width:      isMobile ? "100%" : "45%",
+        height:     isMobile ? "40%" : "100%",
+        padding:    isMobile ? "20px 20px" : "0 56px",
+        gap:        isMobile ? 16 : 32,
+        borderTop:  isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
+        borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
         backgroundImage: `
           linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)
@@ -104,16 +118,17 @@ function GridPanel() {
         backgroundSize: `${GRID}px ${GRID}px`,
       }}
       onMouseMove={onMouseMove}
+      onTouchMove={onTouchMove}
     >
       <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" />
 
       {/* Content sits above the grid */}
-      <div className="relative z-10 flex flex-col gap-8">
+      <div className="relative z-10 flex flex-col" style={{ gap: isMobile ? 16 : 32 }}>
         <div className="flex flex-col gap-2">
           <p className="font-mono text-[10px] tracking-[0.35em] uppercase text-white/30">
             available for opportunities
           </p>
-          <h2 className="text-4xl font-bold text-white leading-tight">
+          <h2 style={{ fontSize: isMobile ? 24 : 36 }} className="font-bold text-white leading-tight">
             Let&apos;s build<br />
             <span className="text-transparent bg-clip-text
                              bg-gradient-to-r from-cyan-400 to-violet-400">
@@ -122,7 +137,7 @@ function GridPanel() {
           </h2>
         </div>
 
-        <p className="text-white/50 text-sm leading-relaxed max-w-xs">
+        <p className="text-white/50 leading-relaxed" style={{ fontSize: isMobile ? 12 : 14, maxWidth: isMobile ? "none" : 280 }}>
           Full-stack developer &amp; ML engineer. I blend systems thinking
           with creative interfaces — reach out if you&apos;d like to
           collaborate.
@@ -149,7 +164,7 @@ function GridPanel() {
           ))}
         </div>
 
-        <div className="pt-6 border-t border-white/[0.07]">
+        <div className="pt-4 border-t border-white/[0.07]">
           <p className="font-mono text-[10px] tracking-widest uppercase text-white/20">
             Purushottam Reddy Chinthakuntla · 2025
           </p>
@@ -164,6 +179,8 @@ function GridPanel() {
 interface Props { triggerVh: number }
 
 export function FooterSection({ triggerVh }: Props) {
+  const isMobile = useMobile()
+
   const p = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
     typeof window !== "undefined" ? (triggerVh - 1) * window.innerHeight : 99999,
@@ -178,33 +195,37 @@ export function FooterSection({ triggerVh }: Props) {
         opacity:       p,
         willChange:    "transform, opacity",
         pointerEvents: p > 0.05 ? "auto" : "none",
+        display:       "flex",
+        flexDirection: isMobile ? "column" : "row",
       }}
     >
-      <div className="flex h-full">
+      {/* ── Peacock — top 60% on mobile, left 55% on desktop ─────────────── */}
+      <div
+        className="relative overflow-hidden bg-[#07070f]"
+        style={{
+          width:  isMobile ? "100%" : "55%",
+          height: isMobile ? "60%" : "100%",
+        }}
+      >
+        <Image
+          src="/peacock.png"
+          alt="Peacock line art"
+          fill
+          sizes={isMobile ? "100vw" : "55vw"}
+          style={{ objectFit: "cover", objectPosition: "center", filter: "invert(1)" }}
+          draggable={false}
+        />
 
-        {/* ── Left: peacock image + framer colour wash ──────────────────── */}
-        <div className="relative w-[55%] h-full overflow-hidden bg-[#07070f]">
-          {/* Base: inverted line art — white lines on dark, same as campus */}
-          <Image
-            src="/peacock.png"
-            alt="Peacock line art"
-            fill
-            sizes="55vw"
-            style={{ objectFit: "cover", objectPosition: "center", filter: "invert(1)" }}
-            draggable={false}
-          />
-
-          {/* Colour wash: cycles through peacock hues via mix-blend-mode color */}
-          <motion.div
-            className="absolute inset-0 pointer-events-none"
-            style={{ mixBlendMode: "color" }}
-            animate={{ backgroundColor: COLORS }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          />
-        </div>
-
-        <GridPanel />
+        {/* Colour wash: cycles through peacock hues */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{ mixBlendMode: "color" }}
+          animate={{ backgroundColor: COLORS }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        />
       </div>
+
+      <GridPanel isMobile={isMobile} />
     </div>
   )
 }

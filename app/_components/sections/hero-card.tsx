@@ -17,14 +17,17 @@ export function HeroCard() {
         willChange: "transform, opacity",
       }}
     >
-      <main className="flex h-screen w-screen">
-        <section className="relative w-2/3 h-full">
+      <main className="flex flex-col md:flex-row h-screen w-screen">
+        {/* Canvas: top 60% on mobile, left 2/3 on desktop */}
+        <section className="relative w-full md:w-2/3 h-[60%] md:h-full">
           <CanvasWrapper />
         </section>
 
-        <div className="w-px h-full bg-white/[0.06] shrink-0" />
+        {/* Divider: horizontal on mobile, vertical on desktop */}
+        <div className="w-full h-px md:w-px md:h-full bg-white/[0.06] shrink-0" />
 
-        <section className="w-1/3 h-full overflow-y-auto">
+        {/* Bio: bottom 40% on mobile, right 1/3 on desktop */}
+        <section className="w-full md:w-1/3 h-[40%] md:h-full overflow-y-auto">
           <BioPanel />
         </section>
       </main>
