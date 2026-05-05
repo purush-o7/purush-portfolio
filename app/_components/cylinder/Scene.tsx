@@ -24,9 +24,18 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
   const mouseRaw    = useRef({ x: 0, y: 0 })
   const mouseSmooth = useRef({ x: 0, y: 0 })
 
+  // Scroll-driven rotation
+  const scrollVel  = useRef(0)       // px/event — decays each frame
+  const lastScrollY = useRef(0)
+  const rotY       = useRef(0)       // accumulated rotation (radians)
+
   useEffect(() => {
+    lastScrollY.current = window.scrollY
     function onScroll() {
       const vh = window.innerHeight
+      const dy = window.scrollY - lastScrollY.current
+      lastScrollY.current = window.scrollY
+      scrollVel.current = dy                    // set velocity (sign = direction)
       progressRef.current = Math.max(0, Math.min((window.scrollY - 8 * vh) / vh, 1))
     }
     function onMouse(e: MouseEvent) {
@@ -52,9 +61,11 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
     s.x += (r.x - s.x) * 0.04
     s.y += (r.y - s.y) * 0.04
 
-    // Cable group: slow rotation + subtle foreground parallax
+    // Cable group: scroll-driven rotation + subtle foreground parallax
     if (cableGroupRef.current) {
-      cableGroupRef.current.rotation.y = t * 0.08
+      rotY.current      += scrollVel.current * 0.0018   // scale px → radians
+      scrollVel.current *= 0.85                          // decelerate after scroll stops
+      cableGroupRef.current.rotation.y = rotY.current
       cableGroupRef.current.position.x = s.x * 0.6
       cableGroupRef.current.position.y = s.y * 0.6
     }
