@@ -128,7 +128,7 @@ function GridPanel({ isMobile }: { isMobile: boolean }) {
           <p className="font-mono text-[10px] tracking-[0.35em] uppercase text-white/30">
             available for opportunities
           </p>
-          <h2 style={{ fontSize: isMobile ? 24 : 36 }} className="font-bold text-white leading-tight">
+          <h2 style={{ fontSize: isMobile ? 24 : 36 }} className="font-heading font-bold text-white leading-tight tracking-tight">
             Let&apos;s build<br />
             <span className="text-transparent bg-clip-text
                              bg-gradient-to-r from-cyan-400 to-violet-400">

@@ -11,6 +11,15 @@ interface Props {
 
 const MONO = "var(--font-geist-mono)"
 
+function hl(text: string, accent: string) {
+  const parts = text.split(/\*\*(.+?)\*\*/)
+  return parts.map((p, i) =>
+    i % 2 === 1
+      ? <span key={i} style={{ color: accent, opacity: 0.9, fontWeight: 600 }}>{p}</span>
+      : p
+  )
+}
+
 export function ExperienceCard({ entry, index, total, isMobile }: Props) {
   return (
     <div style={{
@@ -73,8 +82,9 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
           {/* Role + org */}
           <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 5 : 8 }}>
             <h2 style={{
-              fontSize: isMobile ? 22 : 38, fontWeight: 800,
-              color: "#fff", lineHeight: 1.1, margin: 0,
+              fontFamily: "var(--font-heading)",
+              fontSize: isMobile ? 22 : 38, fontWeight: 700,
+              color: "#fff", lineHeight: 1.1, margin: 0, letterSpacing: "-0.01em",
             }}>
               {entry.role}
             </h2>
@@ -131,22 +141,35 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
         overflow:      "hidden",
       }}>
 
-        {/* Bullets */}
-        <ul style={{
-          listStyle: "none", padding: 0, margin: 0,
-          display: "flex", flexDirection: "column", gap: isMobile ? 12 : 18,
-        }}>
-          {entry.bullets.map((b, i) => (
-            <li key={i} style={{
-              fontFamily: MONO, fontSize: isMobile ? 12 : 14,
-              color: "rgba(255,255,255,0.55)", lineHeight: 1.75,
-              paddingLeft: 22, position: "relative",
-            }}>
-              <span style={{ position: "absolute", left: 0, color: entry.accent, opacity: 0.7 }}>›</span>
-              {b}
-            </li>
+        {/* Categorised sections */}
+        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 16 : 24, overflow: "hidden" }}>
+          {entry.sections.map((sec, si) => (
+            <div key={si}>
+              {/* Section heading */}
+              <p style={{
+                fontFamily: MONO, fontSize: isMobile ? 9 : 10,
+                letterSpacing: "0.28em", textTransform: "uppercase",
+                color: entry.accent, opacity: 0.8,
+                margin: "0 0 8px",
+              }}>
+                {sec.heading}
+              </p>
+              {/* Points */}
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: isMobile ? 6 : 9 }}>
+                {sec.points.map((pt, pi) => (
+                  <li key={pi} style={{
+                    fontFamily: MONO, fontSize: isMobile ? 11 : 13,
+                    color: "rgba(255,255,255,0.55)", lineHeight: 1.7,
+                    paddingLeft: 18, position: "relative",
+                  }}>
+                    <span style={{ position: "absolute", left: 0, color: entry.accent, opacity: 0.6 }}>›</span>
+                    {hl(pt, entry.accent)}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
 
         {/* Metrics */}
         {entry.metrics && (
@@ -172,6 +195,32 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
                   {m.label}
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* Links */}
+        {entry.links && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? 8 : 10 }}>
+            {entry.links.map((lk, i) => (
+              <a
+                key={i}
+                href={lk.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontFamily: MONO, fontSize: isMobile ? 10 : 11,
+                  letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: entry.accent,
+                  border: `1px solid ${entry.accent}55`,
+                  background: `${entry.accent}0d`,
+                  padding: isMobile ? "4px 12px" : "5px 16px",
+                  borderRadius: 4, textDecoration: "none",
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                }}
+              >
+                {lk.label} ↗
+              </a>
             ))}
           </div>
         )}

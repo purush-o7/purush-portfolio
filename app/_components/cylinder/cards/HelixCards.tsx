@@ -100,10 +100,8 @@ export function HelixCards({ onExpand }: Props) {
       const x         = ORBIT_R * Math.sin(angle)
       const z         = -ORBIT_R * Math.cos(angle)
       const y         = -ORBIT_H + t * ORBIT_H * 2
-      const sc        = Math.pow(Math.sin(t * Math.PI), 2)
-      const depthFade = (z / ORBIT_R + 1) / 2
-      const rawOp     = Math.min(sc * depthFade * 2, 1)
-      const opacity   = t > 0.01 && t <= 0.5 ? Math.max(rawOp, 0.2) : rawOp
+      const sc      = Math.pow(Math.sin(t * Math.PI), 2)
+      const opacity = Math.max(Math.pow(Math.sin(t * Math.PI), 0.4), t > 0.01 && t < 0.99 ? 0.12 : 0)
       const expanded  = t <= 0.5 && sc > 0.90
 
       // 1. 3-D tilt
@@ -198,7 +196,7 @@ export function HelixCards({ onExpand }: Props) {
                 width: "100%", background: "rgba(0,4,14,0.92)",
                 border: "1px solid rgba(0,255,255,0.28)", borderRadius: 12,
                 padding: "14px 16px", backdropFilter: "blur(18px)",
-                color: "#c8e8ff", fontFamily: "monospace", lineHeight: 1.4,
+                color: "rgba(255,255,255,0.88)", lineHeight: 1.4,
                 overflow: "hidden",
                 boxShadow: "0 0 24px rgba(0,255,255,0.06), inset 0 0 12px rgba(0,255,255,0.03)",
               }}>
@@ -232,10 +230,10 @@ export function HelixCards({ onExpand }: Props) {
                 <div style={{ position:"relative", zIndex:5 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                     <div>
-                      <div style={{ fontSize:8, color:"#0ff", letterSpacing:"0.22em", textTransform:"uppercase", marginBottom:4, opacity:0.75 }}>
+                      <div style={{ fontFamily:"var(--font-geist-mono)", fontSize:9, color:"#0ff", letterSpacing:"0.22em", textTransform:"uppercase", marginBottom:4, opacity:0.75 }}>
                         {card.tag}
                       </div>
-                      <div style={{ fontSize:15, fontWeight:700, color:"#fff", whiteSpace:"nowrap" }}>
+                      <div style={{ fontFamily:"var(--font-heading)", fontSize:16, fontWeight:700, color:"#ffffff", whiteSpace:"nowrap", letterSpacing:"-0.01em" }}>
                         {card.title}
                       </div>
                     </div>
@@ -246,13 +244,13 @@ export function HelixCards({ onExpand }: Props) {
                     ref={el => { expandRefs.current[i] = el }}
                     style={{ overflow:"hidden", maxHeight:"0px", opacity:0, transition:"max-height 0.4s ease, opacity 0.3s ease" }}
                   >
-                    <ul style={{ margin:"12px 0 10px", padding:"0 0 0 14px", fontSize:10, color:"#5a7a9a", lineHeight:1.7, listStyleType:"disc" }}>
-                      {card.points.map((pt, pi) => <li key={pi}>{pt}</li>)}
-                    </ul>
+                    <p style={{ fontFamily:"var(--font-geist-mono)", margin:"10px 0 10px", fontSize:12, color:"rgba(255,255,255,0.82)", lineHeight:1.7 }}>
+                      {card.desc}
+                    </p>
                     <div style={{ paddingTop:10, borderTop:"1px solid rgba(0,255,255,0.10)", display:"flex", alignItems:"center", justifyContent:"space-between", gap:6 }}>
                       <div style={{ display:"flex", flexWrap:"wrap", gap:4, flex:1 }}>
                         {card.tech.map((tk, ti) => (
-                          <span key={ti} style={{ fontSize:8, padding:"2px 7px", borderRadius:4, background:"rgba(0,255,255,0.06)", border:"1px solid rgba(0,255,255,0.20)", color:"#0ff" }}>
+                          <span key={ti} style={{ fontFamily:"var(--font-geist-mono)", fontSize:9, padding:"2px 7px", borderRadius:4, background:"rgba(0,255,255,0.06)", border:"1px solid rgba(0,255,255,0.20)", color:"#0ff" }}>
                             {tk}
                           </span>
                         ))}
@@ -263,7 +261,7 @@ export function HelixCards({ onExpand }: Props) {
                         style={{
                           pointerEvents:"auto", cursor:"pointer", background:"rgba(0,255,255,0.08)",
                           border:"1px solid rgba(0,255,255,0.38)", color:"#0ff",
-                          fontFamily:"monospace", fontSize:8, letterSpacing:"0.15em",
+                          fontFamily:"var(--font-geist-mono)", fontSize:9, letterSpacing:"0.15em",
                           padding:"3px 10px", borderRadius:4, flexShrink:0,
                         }}
                       >

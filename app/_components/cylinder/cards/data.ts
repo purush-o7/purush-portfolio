@@ -2,6 +2,7 @@ export interface CardData {
   title:  string
   tag:    string
   link:   string
+  desc:   string
   points: [string, string, string, string]
   tech:   string[]
 }
@@ -11,6 +12,7 @@ export const DEMO_CARDS: CardData[] = [
     title: "KovilLens",
     tag:   "MR / Research",
     link:  "https://ieeexplore.ieee.org/abstract/document/11172645",
+    desc:  "Mixed Reality app on HoloLens 2 for digital preservation of Moovar Kovil — a 9th-century Chola temple. Published at ICVR 2025.",
     points: [
       "Mixed Reality app for digital preservation of Moovar Kovil temple",
       "Stable spatial anchoring + photogrammetric 3D reconstruction",
@@ -23,6 +25,7 @@ export const DEMO_CARDS: CardData[] = [
     title: "Sapota AI",
     tag:   "Computer Vision",
     link:  "#",
+    desc:  "Deep learning pipeline for sapota fruit quality — ripeness classification, bruise detection, and shelf life prediction using RGB and thermal imaging.",
     points: [
       "Ripeness classification via custom CNN — ~88% accuracy",
       "Bruise detection with SVM + MobileNet hybrid (+15% precision)",
@@ -35,6 +38,7 @@ export const DEMO_CARDS: CardData[] = [
     title: "RecordVault",
     tag:   "Database / Desktop",
     link:  "#",
+    desc:  "Desktop CRM for music recording companies — normalised PostgreSQL schema with transaction-safe CRUD and role-based access for artist and contract management.",
     points: [
       "Desktop CRM for music recording companies and artist management",
       "Normalised PostgreSQL schema — artists, albums, songs, contracts",
@@ -47,6 +51,7 @@ export const DEMO_CARDS: CardData[] = [
     title: "code@Amrita",
     tag:   "Web App",
     link:  "#",
+    desc:  "Competitive programming resource platform for beginners — aggregates problem sets, learning paths, and contest guides. Born from 2 years of CP mentoring.",
     points: [
       "Competitive programming resource platform aimed at beginners",
       "Aggregates problem sets, learning paths, and contest guides",
@@ -59,6 +64,7 @@ export const DEMO_CARDS: CardData[] = [
     title: "SSR Club",
     tag:   "Full Stack",
     link:  "#",
+    desc:  "Full-stack platform for Amrita's Student Social Responsibility club — tracks initiatives, events, and community outreach. Led a 4-person team end-to-end.",
     points: [
       "Platform for Student Social Responsibility club at Amrita",
       "Django backend deployed on Azure App Services",
@@ -71,6 +77,7 @@ export const DEMO_CARDS: CardData[] = [
     title: "VisionAssist",
     tag:   "Hackathon · IEEE",
     link:  "#",
+    desc:  "Real-time voice guidance and hazard detection system for visually impaired users — built as a working prototype in 24 hours at an IEEE national hackathon.",
     points: [
       "24-hour national-level hackathon — IEEE Kerala Section",
       "Real-time voice guidance system for visually impaired users",
@@ -83,6 +90,7 @@ export const DEMO_CARDS: CardData[] = [
     title: "Access Denied",
     tag:   "1st Prize · Anokha",
     link:  "#",
+    desc:  "Won 1st place at Anokha 2023 — Amrita National Techfest. Multi-round contest covering circuit design, hardware troubleshooting, and competitive coding.",
     points: [
       "Won 1st place at Anokha 2023 — Amrita National Techfest",
       "Circuit design and hardware troubleshooting under time pressure",
