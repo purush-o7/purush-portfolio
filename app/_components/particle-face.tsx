@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useMemo } from "react"
-import { Canvas, useFrame } from "@react-three/fiber"
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import * as THREE from "three"
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -9,7 +9,7 @@ const N         = 7000   // must match --count in generate_particles.py
 const FORM_DUR  = 2.6    // fly-in duration (s)
 const SPRING_K  = 0.048
 const DAMPING   = 0.80
-const REPEL_R   = 0.30
+const REPEL_R   = 0.20
 const REPEL_F   = 0.07
 // Traveling wave along stroke direction
 const WAVE_SPEED = 1.1   // temporal frequency (rad/s)
@@ -45,7 +45,9 @@ function FaceParticles() {
   const timer  = useRef(new THREE.Timer())
   const formT0 = useRef<number | null>(null)
   const ready  = useRef(false)
+  const { gl } = useThree()
 
+  const mouseRef  = useRef({ x: 0, y: -0.45 })       // default at chest
   const orig      = useRef(new Float32Array(N * 3))  // face target positions
   const scat      = useRef(new Float32Array(N * 3))  // formation start positions
   const vel       = useRef(new Float32Array(N * 3))  // spring velocities
@@ -120,9 +122,18 @@ function FaceParticles() {
         colAttr.needsUpdate = true
         ready.current = true
       })
-  }, [geo])
 
-  useFrame(({ pointer }) => {
+    const canvas = gl.domElement
+    function onMouseMove(e: MouseEvent) {
+      const rect = canvas.getBoundingClientRect()
+      mouseRef.current.x =  ((e.clientX - rect.left) / rect.width  * 2 - 1) * 1.15
+      mouseRef.current.y = -((e.clientY - rect.top)  / rect.height * 2 - 1) * 0.90
+    }
+    window.addEventListener("mousemove", onMouseMove)
+    return () => window.removeEventListener("mousemove", onMouseMove)
+  }, [geo, gl])
+
+  useFrame(() => {
     if (!ready.current || !ref.current) return
 
     timer.current.update()
@@ -139,8 +150,8 @@ function FaceParticles() {
     const v       = vel.current
     const f       = flow.current
     const oc      = origColor.current
-    const mx = pointer.x * 1.15
-    const my = pointer.y * 0.90
+    const mx = mouseRef.current.x
+    const my = mouseRef.current.y
 
     if (ft < FORM_DUR) {
       // ── fly-in formation ────────────────────────────────────────────────
