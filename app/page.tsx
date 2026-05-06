@@ -7,6 +7,7 @@ import { ExperienceSection }  from "./_components/experience"
 import { CylinderSection }    from "./_components/sections/cylinder-section"
 import { FooterSection }      from "./_components/sections/footer-section"
 import { ScrollSnap }         from "./_components/scroll-snap"
+import { SectionNav }         from "./_components/section-nav"
 import { DEMO_CARDS }         from "./_components/cylinder/cards/data"
 
 // 9 fixed snaps (0–8: nav + experience + cylinder reveal)
@@ -18,6 +19,7 @@ export default function Home() {
     <div className="bg-[#07070f]">
 
       <ScrollSnap sections={SECTIONS} />
+      <SectionNav />
 
       {Array.from({ length: SECTIONS }, (_, i) => (
         <div key={i} style={{ height: "100vh" }} />

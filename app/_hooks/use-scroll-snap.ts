@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { registerNav }       from "./scroll-nav"
 
 const ANIM_MS      = 900    // snap animation duration (ms)
 const ANIM_MS_TOUCH = 680   // slightly snappier on touch
@@ -59,6 +60,8 @@ export function useScrollSnap(sections: number) {
       locked.current   = false
       animDone.current = false
     }
+
+    registerNav((dir) => goTo(current.current + dir))
 
     function goTo(idx: number, ms = ANIM_MS, ease = easeInOutCubic) {
       const target = Math.max(0, Math.min(idx, sections - 1))
