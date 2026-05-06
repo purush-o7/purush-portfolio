@@ -130,36 +130,36 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
       </div>
 
       {/* ── Content panel ───────────────────────────────────────────────────── */}
-      <div data-no-scroll-snap={isMobile ? "true" : undefined} style={{
+      <div style={{
         flex:          1,
         minWidth:      isMobile ? 0 : "50vw",
         padding:       isMobile ? "14px 16px 16px 20px" : "56px 60px 56px 52px",
         display:       "flex",
         flexDirection: "column",
-        justifyContent: isMobile ? "flex-start" : "center",
-        gap:           isMobile ? 16 : 30,
-        overflow:      isMobile ? "auto" : "hidden",
+        justifyContent: "center",
+        gap:           isMobile ? 10 : 30,
+        overflow:      "hidden",
       }}>
 
         {/* Categorised sections */}
-        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 16 : 24, overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 10 : 24, overflow: "hidden" }}>
           {entry.sections.map((sec, si) => (
             <div key={si}>
               {/* Section heading */}
               <p style={{
-                fontFamily: MONO, fontSize: isMobile ? 9 : 10,
+                fontFamily: MONO, fontSize: isMobile ? 8 : 10,
                 letterSpacing: "0.28em", textTransform: "uppercase",
                 color: entry.accent, opacity: 0.8,
-                margin: "0 0 8px",
+                margin: `0 0 ${isMobile ? 4 : 8}px`,
               }}>
                 {sec.heading}
               </p>
               {/* Points */}
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: isMobile ? 6 : 9 }}>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: isMobile ? 4 : 9 }}>
                 {sec.points.map((pt, pi) => (
                   <li key={pi} style={{
-                    fontFamily: MONO, fontSize: isMobile ? 11 : 13,
-                    color: "rgba(255,255,255,0.55)", lineHeight: 1.7,
+                    fontFamily: MONO, fontSize: isMobile ? 10 : 13,
+                    color: "rgba(255,255,255,0.55)", lineHeight: isMobile ? 1.5 : 1.7,
                     paddingLeft: 18, position: "relative",
                   }}>
                     <span style={{ position: "absolute", left: 0, color: entry.accent, opacity: 0.6 }}>›</span>
