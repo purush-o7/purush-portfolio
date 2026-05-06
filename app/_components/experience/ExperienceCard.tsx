@@ -130,15 +130,15 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
       </div>
 
       {/* ── Content panel ───────────────────────────────────────────────────── */}
-      <div style={{
+      <div data-no-scroll-snap={isMobile ? "true" : undefined} style={{
         flex:          1,
         minWidth:      isMobile ? 0 : "50vw",
         padding:       isMobile ? "14px 16px 16px 20px" : "56px 60px 56px 52px",
         display:       "flex",
         flexDirection: "column",
-        justifyContent: "center",
+        justifyContent: isMobile ? "flex-start" : "center",
         gap:           isMobile ? 16 : 30,
-        overflow:      "hidden",
+        overflow:      isMobile ? "auto" : "hidden",
       }}>
 
         {/* Categorised sections */}

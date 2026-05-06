@@ -68,29 +68,28 @@ export function ExperienceSection() {
           el.style.opacity      = "1"
 
         } else if (i === fullPlaced + 1) {
-          // ── Incoming card — fades in as it slides in ──────────────────────
-          const targetLeft  = (fullPlaced + 1) * peek
-          const currentLeft = targetLeft + (1 - incomingT) * (W - targetLeft)
-          el.style.left         = `${currentLeft}px`
+          // ── Incoming card — full width, slides in via transform (no reflow/wrap) ──
+          const targetLeft = (fullPlaced + 1) * peek
+          el.style.left         = `${targetLeft}px`
           el.style.right        = "0"
           el.style.top          = "0"
           el.style.bottom       = "0"
           el.style.width        = "auto"
           el.style.borderRadius = "0"
           el.style.overflow     = "hidden"
-          el.style.transform    = "none"
+          el.style.transform    = `translateX(${(1 - incomingT) * 100}%)`
           el.style.opacity      = String(incomingT)
 
         } else {
           // ── Not yet placed ────────────────────────────────────────────────
-          el.style.left         = `${W}px`
+          el.style.left         = "0"
           el.style.right        = "0"
           el.style.top          = "0"
           el.style.bottom       = "0"
           el.style.width        = "auto"
           el.style.borderRadius = "0"
           el.style.overflow     = "hidden"
-          el.style.transform    = "none"
+          el.style.transform    = "translateX(100%)"
           el.style.opacity      = "0"
         }
       })
