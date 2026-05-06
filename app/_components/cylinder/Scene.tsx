@@ -25,7 +25,7 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
   const mouseSmooth = useRef({ x: 0, y: 0 })
 
   // Constant-speed rotation — scroll only flips direction
-  const ROT_SPEED    = 0.003         // radians/frame, fixed forever
+  const ROT_SPEED    = 0.0012        // radians/frame — matches galaxy group speed
   const rotDir       = useRef(1)     // +1 or -1
   const lastScrollY  = useRef(0)
   const rotY         = useRef(0)

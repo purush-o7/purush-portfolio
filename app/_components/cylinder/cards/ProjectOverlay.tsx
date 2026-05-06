@@ -62,14 +62,14 @@ export function ProjectOverlay({ card, onClose }: Props) {
 
             <button onClick={onClose} style={{
               position:"absolute", top:-52, right:0, background:"transparent",
-              border:"1px solid rgba(0,255,255,0.3)", color:"#0ff",
+              border:`1px solid ${card.accent}55`, color:card.accent,
               fontFamily: MONO, fontSize:11, letterSpacing:"0.12em",
               padding:"6px 18px", borderRadius:6, cursor:"pointer",
             }}>
               ✕ CLOSE
             </button>
 
-            <div style={{ fontFamily: MONO, fontSize:10, color:"#0ff",
+            <div style={{ fontFamily: MONO, fontSize:10, color:card.accent,
                           letterSpacing:"0.28em", textTransform:"uppercase", marginBottom:14 }}>
               {card.tag}
             </div>
@@ -91,7 +91,7 @@ export function ProjectOverlay({ card, onClose }: Props) {
                 <span key={ti} style={{
                   fontFamily: MONO, fontSize:11, padding:"5px 14px", borderRadius:6,
                   background:"rgba(0,255,255,0.07)",
-                  border:"1px solid rgba(0,255,255,0.22)", color:"#0ff",
+                  border:`1px solid ${card.accent}44`, color:card.accent,
                 }}>
                   {tk}
                 </span>
@@ -100,7 +100,7 @@ export function ProjectOverlay({ card, onClose }: Props) {
 
             <a href={card.link} target="_blank" rel="noopener noreferrer" style={{
               display:"inline-flex", alignItems:"center", gap:6,
-              fontFamily: MONO, color:"#0ff", textDecoration:"none", fontSize:12,
+              fontFamily: MONO, color:card.accent, textDecoration:"none", fontSize:12,
               letterSpacing:"0.12em", border:"1px solid rgba(0,255,255,0.3)",
               padding:"10px 22px", borderRadius:8,
             }}>

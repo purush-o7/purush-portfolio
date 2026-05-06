@@ -33,8 +33,8 @@ export function HelixCards({ onExpand }: Props) {
     }), [N])
 
   const trailMats = useMemo(() =>
-    Array.from({ length: N }, () => new THREE.PointsMaterial({
-      color: 0x00ffff, size: 0.07, sizeAttenuation: true,
+    DEMO_CARDS.map(card => new THREE.PointsMaterial({
+      color: new THREE.Color(card.accent), size: 0.07, sizeAttenuation: true,
       transparent: true, opacity: 0, depthWrite: false,
       blending: THREE.AdditiveBlending,
     })), [N])
@@ -158,7 +158,7 @@ export function HelixCards({ onExpand }: Props) {
 
   return (
     <>
-      <pointLight ref={lightRef} color="#00ffff" intensity={0} distance={28} decay={2} />
+      <pointLight ref={lightRef} color="#ffffff" intensity={0} distance={28} decay={2} />
 
       {Array.from({ length: N }, (_, i) => (
         <points
@@ -187,30 +187,30 @@ export function HelixCards({ onExpand }: Props) {
                 ref={el => { burstRefs.current[i] = el }}
                 style={{
                   position: "absolute", inset: "-10px", borderRadius: 18,
-                  border: "2px solid rgba(0,255,255,0.75)", opacity: 0,
+                  border: `2px solid ${card.accent}bb`, opacity: 0,
                   pointerEvents: "none",
                 }}
               />
 
               <div style={{
                 width: "100%", background: "rgba(0,4,14,0.92)",
-                border: "1px solid rgba(0,255,255,0.28)", borderRadius: 12,
+                border: `1px solid ${card.accent}44`, borderRadius: 12,
                 padding: "14px 16px", backdropFilter: "blur(18px)",
                 color: "rgba(255,255,255,0.88)", lineHeight: 1.4,
                 overflow: "hidden",
-                boxShadow: "0 0 24px rgba(0,255,255,0.06), inset 0 0 12px rgba(0,255,255,0.03)",
+                boxShadow: `0 0 24px ${card.accent}10, inset 0 0 12px ${card.accent}08`,
               }}>
 
                 <div style={{
                   position:"absolute", inset:0, pointerEvents:"none", zIndex:3, borderRadius:12,
-                  background:"repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,255,0.022) 3px,rgba(0,255,255,0.022) 4px)",
+                  background:`repeating-linear-gradient(0deg,transparent,transparent 3px,${card.accent}08 3px,${card.accent}08 4px)`,
                 }} />
 
                 {([
-                  { top:5, left:5,   borderTop:"1px solid #0ff", borderLeft:"1px solid #0ff"   },
-                  { top:5, right:5,  borderTop:"1px solid #0ff", borderRight:"1px solid #0ff"  },
-                  { bottom:5, left:5,  borderBottom:"1px solid #0ff", borderLeft:"1px solid #0ff"  },
-                  { bottom:5, right:5, borderBottom:"1px solid #0ff", borderRight:"1px solid #0ff" },
+                  { top:5, left:5,   borderTop:`1px solid ${card.accent}`, borderLeft:`1px solid ${card.accent}`   },
+                  { top:5, right:5,  borderTop:`1px solid ${card.accent}`, borderRight:`1px solid ${card.accent}`  },
+                  { bottom:5, left:5,  borderBottom:`1px solid ${card.accent}`, borderLeft:`1px solid ${card.accent}`  },
+                  { bottom:5, right:5, borderBottom:`1px solid ${card.accent}`, borderRight:`1px solid ${card.accent}` },
                 ] as React.CSSProperties[]).map((s, bi) => (
                   <div key={bi} style={{
                     position:"absolute", width:9, height:9, zIndex:4,
@@ -222,7 +222,7 @@ export function HelixCards({ onExpand }: Props) {
                 <div style={{ position:"absolute", inset:0, overflow:"hidden", pointerEvents:"none", zIndex:2, borderRadius:12 }}>
                   <div style={{
                     position:"absolute", top:0, bottom:0, width:"28%",
-                    background:"linear-gradient(90deg,transparent,rgba(0,255,255,0.07),transparent)",
+                    background:`linear-gradient(90deg,transparent,${card.accent}12,transparent)`,
                     animation:`hx-shimmer 3.5s ease-in-out ${i * 0.45}s infinite`,
                   }} />
                 </div>
@@ -230,14 +230,14 @@ export function HelixCards({ onExpand }: Props) {
                 <div style={{ position:"relative", zIndex:5 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                     <div>
-                      <div style={{ fontFamily:"var(--font-geist-mono)", fontSize:9, color:"#0ff", letterSpacing:"0.22em", textTransform:"uppercase", marginBottom:4, opacity:0.75 }}>
+                      <div style={{ fontFamily:"var(--font-geist-mono)", fontSize:9, color:card.accent, letterSpacing:"0.22em", textTransform:"uppercase", marginBottom:4, opacity:0.85 }}>
                         {card.tag}
                       </div>
                       <div style={{ fontFamily:"var(--font-heading)", fontSize:16, fontWeight:700, color:"#ffffff", whiteSpace:"nowrap", letterSpacing:"-0.01em" }}>
                         {card.title}
                       </div>
                     </div>
-                    <span style={{ fontSize:11, color:"#0ff", marginLeft:8, flexShrink:0, opacity:0.6 }}>↗</span>
+                    <span style={{ fontSize:11, color:card.accent, marginLeft:8, flexShrink:0, opacity:0.7 }}>↗</span>
                   </div>
 
                   <div
@@ -247,10 +247,10 @@ export function HelixCards({ onExpand }: Props) {
                     <p style={{ fontFamily:"var(--font-geist-mono)", margin:"10px 0 10px", fontSize:12, color:"rgba(255,255,255,0.82)", lineHeight:1.7 }}>
                       {card.desc}
                     </p>
-                    <div style={{ paddingTop:10, borderTop:"1px solid rgba(0,255,255,0.10)", display:"flex", alignItems:"center", justifyContent:"space-between", gap:6 }}>
+                    <div style={{ paddingTop:10, borderTop:`1px solid ${card.accent}20`, display:"flex", alignItems:"center", justifyContent:"space-between", gap:6 }}>
                       <div style={{ display:"flex", flexWrap:"wrap", gap:4, flex:1 }}>
                         {card.tech.map((tk, ti) => (
-                          <span key={ti} style={{ fontFamily:"var(--font-geist-mono)", fontSize:9, padding:"2px 7px", borderRadius:4, background:"rgba(0,255,255,0.06)", border:"1px solid rgba(0,255,255,0.20)", color:"#0ff" }}>
+                          <span key={ti} style={{ fontFamily:"var(--font-geist-mono)", fontSize:9, padding:"2px 7px", borderRadius:4, background:`${card.accent}0f`, border:`1px solid ${card.accent}33`, color:card.accent }}>
                             {tk}
                           </span>
                         ))}
@@ -259,8 +259,8 @@ export function HelixCards({ onExpand }: Props) {
                         tabIndex={-1}
                         onPointerDown={e => { e.stopPropagation(); onExpand(i) }}
                         style={{
-                          pointerEvents:"auto", cursor:"pointer", background:"rgba(0,255,255,0.08)",
-                          border:"1px solid rgba(0,255,255,0.38)", color:"#0ff",
+                          pointerEvents:"auto", cursor:"pointer", background:`${card.accent}14`,
+                          border:`1px solid ${card.accent}60`, color:card.accent,
                           fontFamily:"var(--font-geist-mono)", fontSize:9, letterSpacing:"0.15em",
                           padding:"3px 10px", borderRadius:4, flexShrink:0,
                         }}

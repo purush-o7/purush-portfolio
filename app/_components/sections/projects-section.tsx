@@ -55,12 +55,12 @@ export function ProjectsSection() {
 
     let raf: number
     function tick() {
-      const half = track.scrollWidth / 2
+      const half = track!.scrollWidth / 2
       posRef.current   -= (imgHoveredRef.current ? 0 : 0.5) + wheelVelRef.current
       wheelVelRef.current *= 0.92
       if (posRef.current < -half) posRef.current += half
       if (posRef.current > 0)     posRef.current -= half
-      track.style.transform = `translateX(${posRef.current}px)`
+      track!.style.transform = `translateX(${posRef.current}px)`
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
