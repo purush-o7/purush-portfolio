@@ -13,65 +13,42 @@ interface Props {
   timeRef:     React.MutableRefObject<number>
 }
 
+const BODY_PTS = 30
+
 export function Cable({ angle, cp, progressRef, timeRef }: Props) {
   const coreRef = useRef<THREE.Mesh>(null)
 
   const [coreGeo, coreMat] = useMemo(() => {
     const { rStart, height: H, waist: rMin, twist, arch, armAngle } = cp
-    const TWIST    = twist * Math.PI
-    const halfH    = H / 2
-    const armLen   = Math.max(rStart, 1)
-    const bendR    = Math.max(arch, 0.1)
-    const armTiltR = (armAngle * Math.PI) / 180
-    const bezH     = bendR * 0.552
-
+    const TWIST  = twist * Math.PI
+    const halfH  = H / 2
+    const tiltR  = (armAngle * Math.PI) / 180
     const phiBot = angle
     const phiTop = angle + TWIST
 
     const p3 = (r: number, y: number, phi: number) =>
       new THREE.Vector3(r * Math.cos(phi), y, r * Math.sin(phi))
 
-    const jR      = rMin + bendR
-    const botJunc = p3(jR,   -halfH - bendR, phiBot)
-    const botBody = p3(rMin, -halfH,         phiBot)
-    const topBody = p3(rMin,  halfH,         phiTop)
-    const topJunc = p3(jR,    halfH + bendR, phiTop)
-    const botTip  = p3(jR + armLen * Math.cos(armTiltR), -halfH - bendR - armLen * Math.sin(armTiltR), phiBot)
-    const topTip  = p3(jR + armLen * Math.cos(armTiltR),  halfH + bendR + armLen * Math.sin(armTiltR), phiTop)
+    // Junction radius (where arm meets the arch) and arm-tip offset
+    const jR    = rMin + arch
+    const tipR  = jR + rStart * Math.cos(tiltR)
+    const tipDY = rStart * Math.sin(tiltR)
 
-    const botArm    = new THREE.LineCurve3(botTip, botJunc)
-    const topArm    = new THREE.LineCurve3(topJunc, topTip)
-    const botCorner = new THREE.CubicBezierCurve3(
-      botJunc,
-      p3(jR   - bezH * Math.cos(armTiltR), -halfH - bendR + bezH * Math.sin(armTiltR), phiBot),
-      p3(rMin,                              -halfH - bezH,                               phiBot),
-      botBody,
-    )
-    const topCorner = new THREE.CubicBezierCurve3(
-      topBody,
-      p3(rMin,                              halfH + bezH,                                phiTop),
-      p3(jR   - bezH * Math.cos(armTiltR),  halfH + bendR - bezH * Math.sin(armTiltR),  phiTop),
-      topJunc,
-    )
-    const bodyCurve = new THREE.CatmullRomCurve3(
-      Array.from({ length: 60 }, (_, j) => {
-        const s = j / 59
-        return new THREE.Vector3(
-          rMin * Math.cos(angle + TWIST * s),
-          -halfH + s * H,
-          rMin * Math.sin(angle + TWIST * s),
-        )
+    // Full cable: tip → junction → helix body → junction → tip
+    const pts = [
+      p3(tipR, -halfH - arch - tipDY, phiBot),        // bottom arm tip
+      p3(jR,   -halfH - arch,         phiBot),        // bottom junction
+      ...Array.from({ length: BODY_PTS }, (_, k) => { // helical body
+        const t = k / (BODY_PTS - 1)
+        return p3(rMin, -halfH + t * H, phiBot + TWIST * t)
       }),
+      p3(jR,    halfH + arch,         phiTop),        // top junction
+      p3(tipR,  halfH + arch + tipDY, phiTop),        // top arm tip
+    ]
+
+    const cG = new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(pts), 1500, 0.018, 7, false,
     )
-
-    const path = new THREE.CurvePath<THREE.Vector3>()
-    path.add(botArm)
-    path.add(botCorner)
-    path.add(bodyCurve)
-    path.add(topCorner)
-    path.add(topArm)
-
-    const cG = new THREE.TubeGeometry(path, 1500, 0.018, 7, false)
     const cM = new THREE.ShaderMaterial({
       uniforms: {
         uP:        { value: 0 },

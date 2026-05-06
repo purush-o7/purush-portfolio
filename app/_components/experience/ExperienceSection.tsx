@@ -48,7 +48,7 @@ export function ExperienceSection() {
           el.style.left         = `${i * peek}px`
           el.style.right        = "auto"
           el.style.width        = `${peek}px`
-          el.style.borderRadius = mob ? "8px 0 0 8px" : "12px 4px 4px 12px"
+          el.style.borderRadius = "0"
           el.style.overflow     = "hidden"
           el.style.top          = "0"
           el.style.bottom       = "0"
@@ -61,7 +61,7 @@ export function ExperienceSection() {
           el.style.top          = "0"
           el.style.bottom       = "0"
           el.style.width        = "auto"
-          el.style.borderRadius = mob ? "12px 0 0 12px" : "16px 0 0 16px"
+          el.style.borderRadius = "0"
           el.style.overflow     = "hidden"
           el.style.transform    = "none"
 
@@ -74,7 +74,7 @@ export function ExperienceSection() {
           el.style.top          = "0"
           el.style.bottom       = "0"
           el.style.width        = "auto"
-          el.style.borderRadius = mob ? "12px 0 0 12px" : "16px 0 0 16px"
+          el.style.borderRadius = "0"
           el.style.overflow     = "hidden"
           el.style.transform    = "none"
 

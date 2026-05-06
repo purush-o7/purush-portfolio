@@ -19,23 +19,6 @@ function hStrokePoints() {
   }).join(" ")
 }
 
-// ── Vertical zigzag ───────────────────────────────────────────────────────────
-const N_V = 14, V_V = 32
-
-function vFillPoints() {
-  const pts = Array.from({ length: N_V * 2 + 1 }, (_, i) => {
-    const y = ((i / (N_V * 2)) * 100).toFixed(4)
-    return `${i % 2 === 0 ? V_V : 0},${y}`
-  })
-  return [...pts, "-9999,100", "-9999,0"].join(" ")
-}
-function vStrokePoints() {
-  return Array.from({ length: N_V * 2 + 1 }, (_, i) => {
-    const y = ((i / (N_V * 2)) * 100).toFixed(4)
-    return `${i % 2 === 0 ? V_V : 0},${y}`
-  }).join(" ")
-}
-
 // ── Data ──────────────────────────────────────────────────────────────────────
 const EVENTS = [
   { year: "2020", accent: "#3B82F6", title: "B.Tech begins",      sub: "Amrita · Computer Science" },
@@ -53,20 +36,10 @@ export function CareerTimeline() {
 
   if (!isMobile) {
     /* ── Desktop: right 40% panel, full height ── */
+    /* Zigzag border is rendered by EducationSection on its right edge — no duplicate here */
     return (
       <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: "auto", width: "40%", zIndex: 10, overflow: "hidden", background: "#07070f" }}>
-
-        {/* Vertical zigzag on left edge */}
-        <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: V_V, pointerEvents: "none" }}>
-          <svg viewBox={`0 0 ${V_V} 100`} preserveAspectRatio="none"
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible" }}>
-            <polygon  points={vFillPoints()}  fill="#07070f" />
-            <polyline points={vStrokePoints()} stroke="rgba(255,255,255,0.20)" strokeWidth="1" fill="none" vectorEffect="non-scaling-stroke" />
-          </svg>
-        </div>
-
-        {/* Content */}
-        <div style={{ position: "absolute", top: 0, left: V_V, right: 0, bottom: 0, display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 48px", gap: 0, overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 48px", gap: 0, overflow: "hidden" }}>
           <Content isMobile={false} />
         </div>
       </div>

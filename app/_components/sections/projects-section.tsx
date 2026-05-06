@@ -27,12 +27,11 @@ const IMAGES = [
 export function ProjectsSection() {
   const isMobile = useMobile()
 
-  // Entry: slides up into view during scroll 2vh → 3vh
+  // Visible while on this section (scrollY 2vh → 4vh)
   const p = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
     typeof window !== "undefined" ? 2 * window.innerHeight : 1600,
   )
-  // Exit: slides up off the top during scroll 3vh → 4vh, revealing cable scene behind
   const exit = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
     typeof window !== "undefined" ? 3 * window.innerHeight : 2400,
@@ -45,15 +44,36 @@ export function ProjectsSection() {
 
   return (
     <div
-      className="fixed inset-0 z-20 bg-[#07070f] overflow-hidden"
+      className="fixed inset-0 z-20 bg-[#07070f]"
       style={{
-        transform:  `translateY(${((1 - p) - exit) * 100}vh) scale(${0.97 + p * 0.03})`,
-        opacity:    p,
-        willChange: "transform, opacity",
-        display:    "flex",
-        flexDirection: isMobile ? "column-reverse" : "row",
+        visibility: p > 0 && exit < 1 ? "visible" : "hidden",
+        transform:  `translateY(${((1 - p) - exit) * 100}vh)`,
+        willChange: "transform",
       }}
     >
+      {/* Inner card — floats over the black base with margin */}
+      <div style={{
+        position: "absolute",
+        inset:    8,
+        border:   "1px solid rgba(255,255,255,0.08)",
+        overflow:     "hidden",
+        display:      "flex",
+        flexDirection: isMobile ? "column-reverse" : "row",
+        background:   "#07070f",
+      }}>
+
+        {/* Gradient base — sits behind left panel content only */}
+        <div style={{
+          position:   "absolute",
+          top:        0,
+          left:       0,
+          bottom:     0,
+          width:      isMobile ? "100%" : "40%",
+          background: "radial-gradient(ellipse 140% 100% at 0% 60%, rgba(0,100,130,0.4) 0%, rgba(0,50,70,0.2) 45%, transparent 75%)",
+          pointerEvents: "none",
+          zIndex:     0,
+        }} />
+
       {/* ── Info panel — bottom 40% on mobile, left 2/5 on desktop ─────────── */}
       <div
         className="relative flex flex-col justify-center overflow-hidden shrink-0"
@@ -64,6 +84,7 @@ export function ProjectsSection() {
           gap:          isMobile ? 12 : 28,
           borderTop:    isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
           borderRight:  isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
+          zIndex:       1,
         }}
       >
 
@@ -319,6 +340,7 @@ export function ProjectsSection() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div> {/* end inner card */}
     </div>
   )
 }

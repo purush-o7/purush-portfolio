@@ -31,10 +31,8 @@ export function EducationRightCard() {
   )
 
   const animStyle = {
-    transform:  `translateY(-${p * 100}vh) scale(${1 - p * 0.03})`,
-    opacity:    1 - p * 0.45,
-    boxShadow:  p > 0 ? `0 ${p * 48}px ${p * 80}px rgba(0,0,0,0.8)` : "none",
-    willChange: "transform, opacity" as const,
+    transform:  `translateY(-${p * 100}vh)`,
+    willChange: "transform" as const,
   }
 
   /* ── Desktop ──────────────────────────────────────────────────────────────── */

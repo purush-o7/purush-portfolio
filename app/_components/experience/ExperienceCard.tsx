@@ -17,44 +17,42 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
       flexDirection: isMobile ? "column" : "row",
       background: "#07070f",
     }}>
-      {/* Left accent bar */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, bottom: 0,
-        width: 5, background: entry.accent,
-        zIndex: 2, pointerEvents: "none",
-      }} />
-      {/* Top bar — fades right so no hard cut when next card slides in */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0,
-        height: 5,
-        background: `linear-gradient(90deg, ${entry.accent} 0%, ${entry.accent}00 40%)`,
-        zIndex: 2, pointerEvents: "none",
-      }} />
-      {/* Bottom bar — same */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0,
-        height: 5,
-        background: `linear-gradient(90deg, ${entry.accent} 0%, ${entry.accent}00 40%)`,
-        zIndex: 2, pointerEvents: "none",
-      }} />
 
 
       {/* ── Identity panel — top 40% on mobile, left 42% on desktop ──────── */}
+      {/* Outer wrapper: sizes the slot, holds gradient base + content card */}
       <div style={{
-        width:        isMobile ? "100%" : "42%",
-        height:       isMobile ? "40%" : "auto",
-        minWidth:     isMobile ? 0 : "42vw",
-        flexShrink:   0,
-        padding:      isMobile ? "16px 16px 12px 20px" : "56px 56px",
-        display:      "flex",
-        flexDirection: "column",
-        justifyContent: isMobile ? "center" : "center",
-        gap:          isMobile ? 8 : 20,
+        width:      isMobile ? "100%" : "42%",
+        height:     isMobile ? "40%" : "100%",
+        minWidth:   isMobile ? 0 : "42vw",
+        flexShrink: 0,
+        position:   "relative",
+        /* margin gap on left/top/bottom; right flush with separator */
+        padding:    isMobile ? "8px 0 0 8px" : "8px 0 8px 8px",
         borderRight:  isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
         borderBottom: isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
-        whiteSpace:   "normal",
-        overflow:     "hidden",
       }}>
+
+        {/* Gradient base — bleeds to outer edges of wrapper */}
+        <div style={{
+          position:   "absolute", inset: 0,
+          background: `radial-gradient(ellipse 220% 110% at 0% 50%, ${entry.accent}cc 0%, ${entry.accent}44 50%, transparent 80%)`,
+          pointerEvents: "none",
+        }} />
+
+        {/* Content card — sits on top, margin creates the glowing border gap */}
+        <div style={{
+          position:      "relative",
+          height:        "100%",
+          background:    "#07070f",
+          borderRadius:  isMobile ? "6px 6px 0 0" : "6px 0 0 6px",
+          padding:       isMobile ? "16px 16px 12px 20px" : "56px 56px",
+          display:       "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap:           isMobile ? 8 : 20,
+          overflow:      "hidden",
+        }}>
         {/* Counter */}
         <span style={{
           fontFamily: "monospace", fontSize: isMobile ? 8 : 9, letterSpacing: "0.3em",
@@ -104,7 +102,8 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
             </span>
           ))}
         </div>
-      </div>
+        </div> {/* end content card */}
+      </div>   {/* end outer wrapper */}
 
       {/* ── Content panel — bottom 60% on mobile, right 58% on desktop ──────── */}
       <div style={{
