@@ -75,7 +75,7 @@ export function EducationRightCard() {
         display: "flex", flexDirection: "column", justifyContent: "center",
         padding: "20px 24px", gap: 12, overflow: "hidden",
       }}>
-        <p style={{ fontFamily: "monospace", fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
+        <p style={{ fontFamily: "var(--font-geist-mono)", fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
           Education
         </p>
 
@@ -91,22 +91,22 @@ export function EducationRightCard() {
         <div style={{ width: 32, height: 1, background: "rgba(255,255,255,0.2)" }} />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <p style={{ fontFamily: "monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", margin: 0 }}>
+          <p style={{ fontFamily: "var(--font-geist-mono)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", margin: 0 }}>
             B.Tech · Computer Science & Engineering
           </p>
-          <p style={{ fontFamily: "monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", margin: 0 }}>
+          <p style={{ fontFamily: "var(--font-geist-mono)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", margin: 0 }}>
             Amritapuri, Kerala
           </p>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 220 }}>
-            <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Period</span>
-            <span style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>2020 – 2024</span>
+            <span style={{ fontFamily: "var(--font-geist-mono)", fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Period</span>
+            <span style={{ fontFamily: "var(--font-geist-mono)", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>2020 – 2024</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 220 }}>
-            <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em" }}>CGPA</span>
-            <span style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>7.96 / 10</span>
+            <span style={{ fontFamily: "var(--font-geist-mono)", fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em" }}>CGPA</span>
+            <span style={{ fontFamily: "var(--font-geist-mono)", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>7.96 / 10</span>
           </div>
         </div>
       </div>

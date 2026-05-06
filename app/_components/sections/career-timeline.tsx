@@ -80,7 +80,7 @@ function Content({ isMobile }: { isMobile: boolean }) {
   return (
     <>
       <p style={{
-        fontFamily: "monospace", fontSize: 10, letterSpacing: "0.3em",
+        fontFamily: "var(--font-geist-mono)", fontSize: 11, letterSpacing: "0.3em",
         textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
         margin: 0, marginBottom: isMobile ? 10 : 24,
       }}>
@@ -107,11 +107,11 @@ function Content({ isMobile }: { isMobile: boolean }) {
           {/* Text */}
           <div style={{ flex: 1, minWidth: 0, paddingBottom: i < EVENTS.length - 1 ? (isMobile ? 6 : 12) : 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontFamily: "monospace", fontSize: 9, color: e.accent, opacity: 0.85, flexShrink: 0 }}>
+              <span style={{ fontFamily: "var(--font-geist-mono)", fontSize: 10, color: e.accent, opacity: 0.85, flexShrink: 0 }}>
                 {e.year}
               </span>
               <span style={{
-                fontFamily: "monospace", fontSize: isMobile ? 11 : 13, fontWeight: 600,
+                fontFamily: "var(--font-geist-mono)", fontSize: isMobile ? 12 : 14, fontWeight: 600,
                 color: "rgba(255,255,255,0.85)", flex: 1, minWidth: 0,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}>
@@ -119,7 +119,7 @@ function Content({ isMobile }: { isMobile: boolean }) {
               </span>
             </div>
             <p style={{
-              fontFamily: "monospace", fontSize: 9,
+              fontFamily: "var(--font-geist-mono)", fontSize: 10,
               color: "rgba(255,255,255,0.38)", margin: "2px 0 0", lineHeight: 1.4,
             }}>
               {e.sub}

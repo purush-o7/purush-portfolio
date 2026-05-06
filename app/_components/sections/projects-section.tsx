@@ -144,7 +144,7 @@ export function ProjectsSection() {
           {!isMobile && <div className="w-8 h-px bg-white/20" />}
 
           <p className="font-mono text-white/50 leading-[1.8]"
-             style={{ fontSize: isMobile ? 11 : 14, maxWidth: isMobile ? "none" : 300 }}>
+             style={{ fontSize: isMobile ? 13 : 15, maxWidth: isMobile ? "none" : 300 }}>
             Mixed Reality on Microsoft HoloLens&nbsp;2 for digital preservation of Moovar
             Kovil — a 9th-century Chola temple complex in Tamil Nadu.
           </p>
@@ -161,7 +161,7 @@ export function ProjectsSection() {
             {["HoloLens 2", "Unity", "C#", "MRTK", "Mixed Reality"].map((t) => (
               <span key={t} className="font-mono tracking-widest uppercase
                                        text-white/30 border border-white/10 px-2 py-0.5 rounded-sm"
-                    style={{ fontSize: isMobile ? 8 : 12 }}>
+                    style={{ fontSize: isMobile ? 10 : 12 }}>
                 {t}
               </span>
             ))}
@@ -172,7 +172,7 @@ export function ProjectsSection() {
             target="_blank" rel="noopener noreferrer"
             className="relative inline-flex items-center overflow-hidden
                        font-mono tracking-widest uppercase w-fit focus:outline-none"
-            style={{ fontSize: isMobile ? 9 : 12 }}
+            style={{ fontSize: isMobile ? 10 : 12 }}
             onHoverStart={() => setDoiHovered(true)}
             onHoverEnd={() => setDoiHovered(false)}
             animate={{

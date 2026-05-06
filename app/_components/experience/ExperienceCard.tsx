@@ -9,6 +9,8 @@ interface Props {
   isMobile: boolean
 }
 
+const MONO = "var(--font-geist-mono)"
+
 export function ExperienceCard({ entry, index, total, isMobile }: Props) {
   return (
     <div style={{
@@ -18,29 +20,26 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
       background: "#07070f",
     }}>
 
-
-      {/* ── Identity panel — top 40% on mobile, left 42% on desktop ──────── */}
-      {/* Outer wrapper: sizes the slot, holds gradient base + content card */}
+      {/* ── Identity panel ──────────────────────────────────────────────────── */}
       <div style={{
         width:      isMobile ? "100%" : "42%",
         height:     isMobile ? "40%" : "100%",
         minWidth:   isMobile ? 0 : "42vw",
         flexShrink: 0,
         position:   "relative",
-        /* margin gap on left/top/bottom; right flush with separator */
         padding:    isMobile ? "8px 0 0 8px" : "8px 0 8px 8px",
         borderRight:  isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
         borderBottom: isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
       }}>
 
-        {/* Gradient base — bleeds to outer edges of wrapper */}
+        {/* Gradient base */}
         <div style={{
           position:   "absolute", inset: 0,
           background: `radial-gradient(ellipse 200% 90% at 0% 50%, ${entry.accent}cc 0%, ${entry.accent}33 55%, transparent 75%)`,
           pointerEvents: "none",
         }} />
 
-        {/* Content card — sits on top, margin creates the glowing border gap */}
+        {/* Content card */}
         <div style={{
           position:      "relative",
           height:        "100%",
@@ -50,62 +49,77 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
           display:       "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap:           isMobile ? 8 : 20,
+          gap:           isMobile ? 10 : 22,
           overflow:      "hidden",
         }}>
-        {/* Counter */}
-        <span style={{
-          fontFamily: "monospace", fontSize: isMobile ? 8 : 9, letterSpacing: "0.3em",
-          color: "rgba(255,255,255,0.2)",
-        }}>
-          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-        </span>
 
-        {/* Tag */}
-        <span style={{
-          fontFamily: "monospace", fontSize: isMobile ? 8 : 9, letterSpacing: "0.3em",
-          textTransform: "uppercase", color: entry.accent, opacity: 0.9,
-        }}>
-          {entry.tag}
-        </span>
+          {/* Counter */}
+          <span style={{
+            fontFamily: MONO, fontSize: isMobile ? 10 : 11,
+            letterSpacing: "0.3em", color: "rgba(255,255,255,0.2)",
+          }}>
+            {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+          </span>
 
-        {/* Role + org */}
-        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 4 : 6 }}>
-          <h2 style={{ fontSize: isMobile ? 20 : 36, fontWeight: 800, color: "#fff", lineHeight: 1.1, margin: 0 }}>
-            {entry.role}
-          </h2>
-          <p style={{ fontFamily: "monospace", fontSize: isMobile ? 11 : 13, color: "rgba(255,255,255,0.5)", margin: 0 }}>
-            {entry.org}
-          </p>
-          {entry.location && (
-            <p style={{ fontFamily: "monospace", fontSize: isMobile ? 9 : 11, color: "rgba(255,255,255,0.3)", margin: 0 }}>
-              {entry.location}
-            </p>
-          )}
-          <p style={{ fontFamily: "monospace", fontSize: isMobile ? 9 : 11, color: "rgba(255,255,255,0.28)", margin: 0 }}>
-            {entry.period} · {entry.duration}
-          </p>
-        </div>
+          {/* Tag */}
+          <span style={{
+            fontFamily: MONO, fontSize: isMobile ? 10 : 11,
+            letterSpacing: "0.3em", textTransform: "uppercase",
+            color: entry.accent, opacity: 0.9,
+          }}>
+            {entry.tag}
+          </span>
 
-        {/* Tech chips */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-          {entry.tech.map((t, i) => (
-            <span key={i} style={{
-              fontFamily: "monospace", fontSize: isMobile ? 8 : 9,
-              padding: isMobile ? "2px 7px" : "3px 10px",
-              borderRadius: 4, letterSpacing: "0.1em",
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.38)",
+          {/* Role + org */}
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 5 : 8 }}>
+            <h2 style={{
+              fontSize: isMobile ? 22 : 38, fontWeight: 800,
+              color: "#fff", lineHeight: 1.1, margin: 0,
             }}>
-              {t}
-            </span>
-          ))}
-        </div>
-        </div> {/* end content card */}
-      </div>   {/* end outer wrapper */}
+              {entry.role}
+            </h2>
+            <p style={{
+              fontFamily: MONO, fontSize: isMobile ? 12 : 14,
+              color: "rgba(255,255,255,0.5)", margin: 0,
+            }}>
+              {entry.org}
+            </p>
+            {entry.location && (
+              <p style={{
+                fontFamily: MONO, fontSize: isMobile ? 10 : 12,
+                color: "rgba(255,255,255,0.3)", margin: 0,
+              }}>
+                {entry.location}
+              </p>
+            )}
+            <p style={{
+              fontFamily: MONO, fontSize: isMobile ? 10 : 12,
+              color: "rgba(255,255,255,0.28)", margin: 0,
+            }}>
+              {entry.period} · {entry.duration}
+            </p>
+          </div>
 
-      {/* ── Content panel — bottom 60% on mobile, right 58% on desktop ──────── */}
+          {/* Tech chips */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+            {entry.tech.map((t, i) => (
+              <span key={i} style={{
+                fontFamily: MONO, fontSize: isMobile ? 10 : 11,
+                padding: isMobile ? "2px 8px" : "3px 10px",
+                borderRadius: 4, letterSpacing: "0.1em",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.38)",
+              }}>
+                {t}
+              </span>
+            ))}
+          </div>
+
+        </div>
+      </div>
+
+      {/* ── Content panel ───────────────────────────────────────────────────── */}
       <div style={{
         flex:          1,
         minWidth:      isMobile ? 0 : "50vw",
@@ -113,14 +127,18 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
         display:       "flex",
         flexDirection: "column",
         justifyContent: "center",
-        gap:           isMobile ? 14 : 28,
+        gap:           isMobile ? 16 : 30,
         overflow:      "hidden",
       }}>
+
         {/* Bullets */}
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: isMobile ? 10 : 16 }}>
+        <ul style={{
+          listStyle: "none", padding: 0, margin: 0,
+          display: "flex", flexDirection: "column", gap: isMobile ? 12 : 18,
+        }}>
           {entry.bullets.map((b, i) => (
             <li key={i} style={{
-              fontFamily: "monospace", fontSize: isMobile ? 11 : 13,
+              fontFamily: MONO, fontSize: isMobile ? 12 : 14,
               color: "rgba(255,255,255,0.55)", lineHeight: 1.75,
               paddingLeft: 22, position: "relative",
             }}>
@@ -138,14 +156,18 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
                 textAlign: "center",
                 background: `color-mix(in srgb, ${entry.accent} 8%, transparent)`,
                 border: `1px solid color-mix(in srgb, ${entry.accent} 35%, transparent)`,
-                borderRadius: 10, padding: isMobile ? "8px 16px" : "12px 28px",
+                borderRadius: 10, padding: isMobile ? "8px 18px" : "12px 28px",
               }}>
-                <div style={{ fontFamily: "monospace", fontSize: isMobile ? 18 : 26, fontWeight: 700, color: entry.accent }}>
+                <div style={{
+                  fontFamily: MONO, fontSize: isMobile ? 20 : 26,
+                  fontWeight: 700, color: entry.accent,
+                }}>
                   {m.value}
                 </div>
                 <div style={{
-                  fontFamily: "monospace", fontSize: isMobile ? 7 : 8, letterSpacing: "0.18em",
-                  textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginTop: 4,
+                  fontFamily: MONO, fontSize: 10,
+                  letterSpacing: "0.18em", textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.3)", marginTop: 4,
                 }}>
                   {m.label}
                 </div>
