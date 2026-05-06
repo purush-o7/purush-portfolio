@@ -3,6 +3,7 @@
 import { useEffect, useRef }              from "react"
 import { motion, AnimatePresence }        from "framer-motion"
 import { type CardData }                  from "./data"
+import { trackOverlayOpen, trackOverlayClose, trackProjectClick } from "../../../_lib/analytics"
 
 const MONO    = "var(--font-geist-mono)"
 const HEADING = "var(--font-heading)"
@@ -14,14 +15,17 @@ interface Props {
 
 export function ProjectOverlay({ card, onClose }: Props) {
   const openYRef    = useRef(0)
+  const openTimeRef = useRef(0)
   const activeRef   = useRef(false)
 
   useEffect(() => {
     if (!card) { activeRef.current = false; return }
 
-    // Snapshot scroll position when overlay opens
-    openYRef.current  = window.scrollY
-    activeRef.current = false
+    // Snapshot scroll position and time when overlay opens
+    openYRef.current   = window.scrollY
+    openTimeRef.current = Date.now()
+    activeRef.current  = false
+    trackOverlayOpen(card.title)
 
     // Grace period before scroll-close activates
     const grace = setTimeout(() => { activeRef.current = true }, 700)
@@ -60,7 +64,7 @@ export function ProjectOverlay({ card, onClose }: Props) {
         >
           <div style={{ maxWidth:680, width:"90%", color:"rgba(255,255,255,0.88)", position:"relative" }}>
 
-            <button onClick={onClose} style={{
+            <button onClick={() => { trackOverlayClose(card.title, Date.now() - openTimeRef.current); onClose() }} style={{
               position:"absolute", top:-52, right:0, background:"transparent",
               border:`1px solid ${card.accent}55`, color:card.accent,
               fontFamily: MONO, fontSize:11, letterSpacing:"0.12em",
@@ -98,7 +102,7 @@ export function ProjectOverlay({ card, onClose }: Props) {
               ))}
             </div>
 
-            <a href={card.link} target="_blank" rel="noopener noreferrer" style={{
+            <a href={card.link} target="_blank" rel="noopener noreferrer" onClick={() => trackProjectClick(card.title)} style={{
               display:"inline-flex", alignItems:"center", gap:6,
               fontFamily: MONO, color:card.accent, textDecoration:"none", fontSize:12,
               letterSpacing:"0.12em", border:"1px solid rgba(0,255,255,0.3)",

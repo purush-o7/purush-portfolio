@@ -1,6 +1,7 @@
 "use client"
 
-import { navSection } from "../_hooks/scroll-nav"
+import { navSection }      from "../_hooks/scroll-nav"
+import { trackNavArrow }   from "../_lib/analytics"
 
 export function SectionNav() {
   return (
@@ -16,7 +17,7 @@ export function SectionNav() {
       {/* Up */}
       <button
         aria-label="Previous section"
-        onClick={() => navSection(-1)}
+        onClick={() => { trackNavArrow("up", Math.round(window.scrollY / window.innerHeight)); navSection(-1) }}
         style={{
           width:          40,
           height:         40,
@@ -52,7 +53,7 @@ export function SectionNav() {
       {/* Down */}
       <button
         aria-label="Next section"
-        onClick={() => navSection(1)}
+        onClick={() => { trackNavArrow("down", Math.round(window.scrollY / window.innerHeight)); navSection(1) }}
         style={{
           width:          40,
           height:         40,

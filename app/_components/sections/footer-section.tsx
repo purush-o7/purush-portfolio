@@ -5,6 +5,7 @@ import { motion }                   from "framer-motion"
 import { useState, useRef, useEffect } from "react"
 import { useScrollProgress }          from "../../_hooks/use-scroll-progress"
 import { useMobile }                  from "../../_hooks/use-mobile"
+import { trackContactClick }          from "../../_lib/analytics"
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -151,6 +152,7 @@ function GridPanel({ isMobile }: { isMobile: boolean }) {
               target={href.startsWith("mailto") ? undefined : "_blank"}
               rel="noopener noreferrer"
               className="flex items-center gap-3 group w-fit"
+              onClick={() => trackContactClick(label as "GitHub" | "LinkedIn" | "Email")}
             >
               <span className="text-white/30 group-hover:text-cyan-400 transition-colors duration-200">
                 {icon}

@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence }     from "framer-motion"
 import { useScrollProgress }           from "../../_hooks/use-scroll-progress"
 import { useMobile }                   from "../../_hooks/use-mobile"
+import { trackGalleryScroll }          from "../../_lib/analytics"
 
 const TempleViewer = dynamic(
   () => import("../temple-viewer").then((m) => m.TempleViewer),
@@ -65,17 +66,21 @@ export function ProjectsSection() {
     }
     raf = requestAnimationFrame(tick)
 
+    let galleryTracked = false  // fire once per gallery interaction
     function onWheel(e: WheelEvent) {
       e.preventDefault()
       wheelVelRef.current += (e.deltaX || e.deltaY) * 0.06
+      if (!galleryTracked) { trackGalleryScroll("wheel"); galleryTracked = true }
     }
     function onTouchStart(e: TouchEvent) {
       touchXRef.current = e.touches[0].clientX
+      galleryTracked = false
     }
     function onTouchMove(e: TouchEvent) {
       const dx = e.touches[0].clientX - touchXRef.current
       wheelVelRef.current -= dx * 0.06
       touchXRef.current = e.touches[0].clientX
+      if (!galleryTracked) { trackGalleryScroll("touch"); galleryTracked = true }
     }
 
     gallery.addEventListener("wheel",      onWheel,      { passive: false })

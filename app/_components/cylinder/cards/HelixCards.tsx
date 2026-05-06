@@ -5,6 +5,7 @@ import { useFrame }                    from "@react-three/fiber"
 import { Html }                        from "@react-three/drei"
 import * as THREE                      from "three"
 import { DEMO_CARDS, ORBIT_R, ORBIT_H } from "./data"
+import { trackCardExpand }              from "../../../_lib/analytics"
 
 interface Props { onExpand: (i: number) => void }
 
@@ -257,7 +258,7 @@ export function HelixCards({ onExpand }: Props) {
                       </div>
                       <button
                         tabIndex={-1}
-                        onPointerDown={e => { e.stopPropagation(); onExpand(i) }}
+                        onPointerDown={e => { e.stopPropagation(); trackCardExpand(card.title); onExpand(i) }}
                         style={{
                           pointerEvents:"auto", cursor:"pointer", background:`${card.accent}14`,
                           border:`1px solid ${card.accent}60`, color:card.accent,

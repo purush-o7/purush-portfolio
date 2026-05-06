@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { registerNav }       from "./scroll-nav"
-
+import { registerNav, SECTION_STARTS } from "./scroll-nav"
+import { trackSectionView }            from "../_lib/analytics"
 
 const ANIM_MS      = 900    // snap animation duration (ms)
 const ANIM_MS_TOUCH = 680   // slightly snappier on touch
@@ -73,10 +73,18 @@ export function useScrollSnap(sections: number) {
       animateScroll(target * window.innerHeight, () => {
         animDone.current = true
         wheelEndTimer.current = setTimeout(unlock, WHEELEND_MS)
+        onSectionChange(target)
       }, ms, ease)
     }
 
     registerNav(goTo, () => current.current)
+
+    const SECTION_NAMES = ["Hero", "Education", "Projects", "Experience", "Cylinder", "Footer"]
+    function onSectionChange(idx: number) {
+      const si = [...SECTION_STARTS].reverse().findIndex(s => idx >= s)
+      const name = SECTION_NAMES[SECTION_STARTS.length - 1 - si]
+      if (name) trackSectionView(name)
+    }
 
     function onWheel(e: WheelEvent) {
       e.preventDefault()
