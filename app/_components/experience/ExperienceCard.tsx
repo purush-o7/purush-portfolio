@@ -45,14 +45,14 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
         height:       isMobile ? "40%" : "auto",
         minWidth:     isMobile ? 0 : "42vw",
         flexShrink:   0,
-        padding:      isMobile ? "20px 20px 16px 24px" : "56px 56px",
+        padding:      isMobile ? "16px 16px 12px 20px" : "56px 56px",
         display:      "flex",
         flexDirection: "column",
-        justifyContent: isMobile ? "flex-start" : "center",
-        gap:          isMobile ? 10 : 20,
+        justifyContent: isMobile ? "center" : "center",
+        gap:          isMobile ? 8 : 20,
         borderRight:  isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
         borderBottom: isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
-        whiteSpace:   isMobile ? "normal" : "nowrap",
+        whiteSpace:   "normal",
         overflow:     "hidden",
       }}>
         {/* Counter */}
@@ -110,7 +110,7 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
       <div style={{
         flex:          1,
         minWidth:      isMobile ? 0 : "50vw",
-        padding:       isMobile ? "16px 20px 20px 24px" : "56px 60px 56px 52px",
+        padding:       isMobile ? "14px 16px 16px 20px" : "56px 60px 56px 52px",
         display:       "flex",
         flexDirection: "column",
         justifyContent: "center",

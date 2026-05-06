@@ -6,8 +6,9 @@ import { useMobile }             from "../../_hooks/use-mobile"
 import { ExperienceCard }        from "./ExperienceCard"
 import { ALL_ENTRIES }           from "./data"
 
-const N    = ALL_ENTRIES.length  // 5
-const PEEK = 10                  // 2× border width (border = 5px)
+const N           = ALL_ENTRIES.length  // 5
+const PEEK        = 10                  // desktop: 2× border width
+const PEEK_MOBILE = 4                   // mobile: just enough to show accent bar
 
 export function ExperienceSection() {
   const isMobile    = useMobile()
@@ -30,7 +31,7 @@ export function ExperienceSection() {
     function update() {
       const h    = window.innerHeight
       const W    = window.innerWidth
-      const peek = isMobileRef.current ? 0 : PEEK
+      const peek = isMobileRef.current ? PEEK_MOBILE : PEEK
 
       // cp: 0 → N-1 as scrollY goes from 4vh to (4+N-1)vh
       const cp         = Math.max(0, Math.min((window.scrollY - 4 * h) / h, N - 1))
@@ -40,12 +41,14 @@ export function ExperienceSection() {
       cardRefs.current.forEach((el, i) => {
         if (!el) return
 
+        const mob = isMobileRef.current
+
         if (i < fullPlaced) {
           // ── Peek strip: card is covered, shows left edge only ────────────
           el.style.left         = `${i * peek}px`
           el.style.right        = "auto"
-          el.style.width        = peek > 0 ? `${peek}px` : "0px"
-          el.style.borderRadius = peek > 0 ? "12px 4px 4px 12px" : "0"
+          el.style.width        = `${peek}px`
+          el.style.borderRadius = mob ? "8px 0 0 8px" : "12px 4px 4px 12px"
           el.style.overflow     = "hidden"
           el.style.top          = "0"
           el.style.bottom       = "0"
@@ -58,7 +61,7 @@ export function ExperienceSection() {
           el.style.top          = "0"
           el.style.bottom       = "0"
           el.style.width        = "auto"
-          el.style.borderRadius = peek > 0 ? "16px 0 0 16px" : "0"
+          el.style.borderRadius = mob ? "12px 0 0 12px" : "16px 0 0 16px"
           el.style.overflow     = "hidden"
           el.style.transform    = "none"
 
@@ -71,7 +74,7 @@ export function ExperienceSection() {
           el.style.top          = "0"
           el.style.bottom       = "0"
           el.style.width        = "auto"
-          el.style.borderRadius = peek > 0 ? "16px 0 0 16px" : "0"
+          el.style.borderRadius = mob ? "12px 0 0 12px" : "16px 0 0 16px"
           el.style.overflow     = "hidden"
           el.style.transform    = "none"
 
