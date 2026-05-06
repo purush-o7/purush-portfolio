@@ -1,15 +1,16 @@
 "use client"
 
-import { useState }               from "react"
-import { Canvas }                 from "@react-three/fiber"
-import { EffectComposer, Bloom }  from "@react-three/postprocessing"
+import { useState, useCallback }   from "react"
+import { Canvas }                   from "@react-three/fiber"
+import { EffectComposer, Bloom }    from "@react-three/postprocessing"
 import { DEF_GALAXY, DEF_CABLE, DEF_BLOOM } from "./config"
-import { Scene }                  from "./Scene"
-import { ProjectOverlay }         from "./cards/ProjectOverlay"
-import { DEMO_CARDS }             from "./cards/data"
+import { Scene }                    from "./Scene"
+import { ProjectOverlay }           from "./cards/ProjectOverlay"
+import { DEMO_CARDS }               from "./cards/data"
 
 export function CylinderScene() {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
+  const handleClose = useCallback(() => setExpandedIdx(null), [])
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -33,7 +34,7 @@ export function CylinderScene() {
 
       <ProjectOverlay
         card={expandedIdx !== null ? DEMO_CARDS[expandedIdx] : null}
-        onClose={() => setExpandedIdx(null)}
+        onClose={handleClose}
       />
     </div>
   )

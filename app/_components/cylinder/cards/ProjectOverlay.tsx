@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect }   from "react"
-import { type CardData } from "./data"
+import { useEffect, useCallback } from "react"
+import { type CardData }          from "./data"
 
 interface Props {
   card:    CardData | null
@@ -9,14 +9,27 @@ interface Props {
 }
 
 export function ProjectOverlay({ card, onClose }: Props) {
+  // Close only when the user snaps to a DIFFERENT section.
+  // Any minor browser scroll (focus, layout, etc.) won't change
+  // Math.round(scrollY / innerHeight), so it can never accidentally close.
   useEffect(() => {
     if (!card) return
-    const startY = window.scrollY
+    const openSnap = Math.round(window.scrollY / window.innerHeight)
+
     function onScroll() {
-      if (Math.abs(window.scrollY - startY) > 40) onClose()
+      const currentSnap = Math.round(window.scrollY / window.innerHeight)
+      if (currentSnap !== openSnap) onClose()
     }
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+
+    // Small delay so any scroll from the pointer-down event settles first
+    const timer = setTimeout(() => {
+      window.addEventListener("scroll", onScroll, { passive: true })
+    }, 300)
+
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener("scroll", onScroll)
+    }
   }, [card, onClose])
 
   const open = card !== null
@@ -74,7 +87,7 @@ export function ProjectOverlay({ card, onClose }: Props) {
             ))}
           </div>
 
-          <a href={card.link} style={{
+          <a href={card.link} target="_blank" rel="noopener noreferrer" style={{
             display:"inline-flex", alignItems:"center", gap:6,
             color:"#0ff", textDecoration:"none", fontSize:12,
             letterSpacing:"0.12em", border:"1px solid rgba(0,255,255,0.3)",
