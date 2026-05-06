@@ -11,10 +11,8 @@ export function HeroCard() {
     <div
       className="fixed inset-0 z-20 bg-[#07070f] overflow-hidden"
       style={{
-        transform:  `translateY(-${p * 100}vh) scale(${1 - p * 0.03})`,
-        opacity:    1 - p * 0.45,
-        boxShadow:  p > 0 ? `0 ${p * 48}px ${p * 80}px rgba(0,0,0,0.8)` : "none",
-        willChange: "transform, opacity",
+        transform:  `translateY(-${p * 100}vh)`,
+        willChange: "transform",
       }}
     >
       <main className="flex flex-col md:flex-row h-screen w-screen">

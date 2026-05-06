@@ -2,7 +2,7 @@
 
 import dynamic                        from "next/dynamic"
 import Image                           from "next/image"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence }     from "framer-motion"
 import { useScrollProgress }           from "../../_hooks/use-scroll-progress"
 import { useMobile }                   from "../../_hooks/use-mobile"
@@ -20,7 +20,7 @@ const IMAGES = [
   { src: "/projects/kovil-lens/screenshot-2.webp",  alt: "KovilLens — interactive analysis mode" },
   { src: "/projects/kovil-lens/screenshot-3.webp",  alt: "KovilLens — temple reconstruction" },
   { src: "/projects/kovil-lens/site-visit-1.jpg",   alt: "Site visit — Moovar Kovil" },
-  { src: "/projects/kovil-lens/site-visit-2.jpg",   alt: "Site visit — temple complex" },
+  { src: "/projects/kovil-lens/site-visit-2.jpg",   alt: "KovilLens — life-size hologram at Moovar Kovil" },
   { src: "/projects/kovil-lens/tooltips.webp",      alt: "KovilLens — UI tooltips" },
 ]
 
@@ -40,40 +40,66 @@ export function ProjectsSection() {
   const [hovered,    setHovered]    = useState<number | null>(null)
   const [lightbox,   setLightbox]   = useState<number | null>(null)
   const [doiHovered, setDoiHovered] = useState(false)
-  const [stripPaused, setStripPaused] = useState(false)
+
+  const galleryRef    = useRef<HTMLDivElement>(null)
+  const trackRef      = useRef<HTMLDivElement>(null)
+  const posRef        = useRef(0)
+  const wheelVelRef   = useRef(0)
+  const touchXRef     = useRef(0)
+  const imgHoveredRef = useRef(false)
+
+  useEffect(() => {
+    const gallery = galleryRef.current
+    const track   = trackRef.current
+    if (!gallery || !track) return
+
+    let raf: number
+    function tick() {
+      const half = track.scrollWidth / 2
+      posRef.current   -= (imgHoveredRef.current ? 0 : 0.5) + wheelVelRef.current
+      wheelVelRef.current *= 0.92
+      if (posRef.current < -half) posRef.current += half
+      if (posRef.current > 0)     posRef.current -= half
+      track.style.transform = `translateX(${posRef.current}px)`
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+
+    function onWheel(e: WheelEvent) {
+      e.preventDefault()
+      wheelVelRef.current += (e.deltaX || e.deltaY) * 0.06
+    }
+    function onTouchStart(e: TouchEvent) {
+      touchXRef.current = e.touches[0].clientX
+    }
+    function onTouchMove(e: TouchEvent) {
+      const dx = e.touches[0].clientX - touchXRef.current
+      wheelVelRef.current -= dx * 0.06
+      touchXRef.current = e.touches[0].clientX
+    }
+
+    gallery.addEventListener("wheel",      onWheel,      { passive: false })
+    gallery.addEventListener("touchstart", onTouchStart, { passive: true  })
+    gallery.addEventListener("touchmove",  onTouchMove,  { passive: true  })
+    return () => {
+      cancelAnimationFrame(raf)
+      gallery.removeEventListener("wheel",      onWheel)
+      gallery.removeEventListener("touchstart", onTouchStart)
+      gallery.removeEventListener("touchmove",  onTouchMove)
+    }
+  }, [])
 
   return (
     <div
-      className="fixed inset-0 z-20 bg-[#07070f]"
+      className="fixed inset-0 z-20 bg-[#07070f] overflow-hidden"
       style={{
-        visibility: p > 0 && exit < 1 ? "visible" : "hidden",
-        transform:  `translateY(${((1 - p) - exit) * 100}vh)`,
-        willChange: "transform",
+        visibility:    p > 0 && exit < 1 ? "visible" : "hidden",
+        transform:     `translateY(${((1 - p) - exit) * 100}vh)`,
+        willChange:    "transform",
+        display:       "flex",
+        flexDirection: isMobile ? "column-reverse" : "row",
       }}
     >
-      {/* Inner card — floats over the black base with margin */}
-      <div style={{
-        position: "absolute",
-        inset:    8,
-        border:   "1px solid rgba(255,255,255,0.08)",
-        overflow:     "hidden",
-        display:      "flex",
-        flexDirection: isMobile ? "column-reverse" : "row",
-        background:   "#07070f",
-      }}>
-
-        {/* Gradient base — sits behind left panel content only */}
-        <div style={{
-          position:   "absolute",
-          top:        0,
-          left:       0,
-          bottom:     0,
-          width:      isMobile ? "100%" : "40%",
-          background: "radial-gradient(ellipse 140% 100% at 0% 60%, rgba(0,100,130,0.4) 0%, rgba(0,50,70,0.2) 45%, transparent 75%)",
-          pointerEvents: "none",
-          zIndex:     0,
-        }} />
-
       {/* ── Info panel — bottom 40% on mobile, left 2/5 on desktop ─────────── */}
       <div
         className="relative flex flex-col justify-center overflow-hidden shrink-0"
@@ -84,7 +110,6 @@ export function ProjectsSection() {
           gap:          isMobile ? 12 : 28,
           borderTop:    isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
           borderRight:  isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
-          zIndex:       1,
         }}
       >
 
@@ -237,6 +262,7 @@ export function ProjectsSection() {
 
         {/* Infinite right-to-left gallery */}
         <div
+          ref={galleryRef}
           className="relative overflow-hidden shrink-0"
           style={{
             height: isMobile ? "32%" : "30%",
@@ -244,13 +270,6 @@ export function ProjectsSection() {
           }}
           data-no-scroll-snap="true"
         >
-          <style>{`
-            @keyframes gallery-rtl {
-              from { transform: translateX(0); }
-              to   { transform: translateX(-50%); }
-            }
-          `}</style>
-
           {/* Nebula core glow */}
           <div className="absolute inset-0 pointer-events-none" style={{
             background: "radial-gradient(ellipse 50% 60% at 55% 40%, rgba(120,60,220,0.12) 0%, transparent 70%), radial-gradient(ellipse 30% 40% at 30% 60%, rgba(60,120,220,0.08) 0%, transparent 60%)",
@@ -262,22 +281,17 @@ export function ProjectsSection() {
           <div className="absolute inset-y-0 right-0 w-16 z-10 pointer-events-none
                           bg-gradient-to-l from-[#07070f] to-transparent" />
 
-          {/* Animated track */}
+          {/* RAF-driven track — wheel/touch controlled */}
           <div
+            ref={trackRef}
             className="flex items-center gap-3 h-full"
-            style={{
-              width: "max-content",
-              animation: "gallery-rtl 38s linear infinite",
-              animationPlayState: stripPaused ? "paused" : "running",
-            }}
-            onMouseEnter={() => setStripPaused(true)}
-            onMouseLeave={() => { setStripPaused(false); setHovered(null) }}
+            style={{ width: "max-content" }}
           >
             {[...IMAGES, ...IMAGES].map((img, i) => (
               <button
                 key={i}
-                onMouseEnter={() => setHovered(i % IMAGES.length)}
-                onMouseLeave={() => setHovered(null)}
+                onMouseEnter={() => { setHovered(i % IMAGES.length); imgHoveredRef.current = true }}
+                onMouseLeave={() => { setHovered(null); imgHoveredRef.current = false }}
                 onClick={() => setLightbox(i % IMAGES.length)}
                 aria-label={img.alt}
                 className="relative shrink-0 overflow-hidden focus:outline-none
@@ -340,7 +354,6 @@ export function ProjectsSection() {
           </motion.div>
         )}
       </AnimatePresence>
-      </div> {/* end inner card */}
     </div>
   )
 }
