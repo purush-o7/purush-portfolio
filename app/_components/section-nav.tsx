@@ -1,6 +1,6 @@
 "use client"
 
-import { navGo } from "../_hooks/scroll-nav"
+import { navSection } from "../_hooks/scroll-nav"
 
 export function SectionNav() {
   return (
@@ -16,7 +16,7 @@ export function SectionNav() {
       {/* Up */}
       <button
         aria-label="Previous section"
-        onClick={() => navGo(-1)}
+        onClick={() => navSection(-1)}
         style={{
           width:          40,
           height:         40,
@@ -52,7 +52,7 @@ export function SectionNav() {
       {/* Down */}
       <button
         aria-label="Next section"
-        onClick={() => navGo(1)}
+        onClick={() => navSection(1)}
         style={{
           width:          40,
           height:         40,

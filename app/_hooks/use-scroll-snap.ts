@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { registerNav }       from "./scroll-nav"
 
+
 const ANIM_MS      = 900    // snap animation duration (ms)
 const ANIM_MS_TOUCH = 680   // slightly snappier on touch
 const WHEELEND_MS  = 200    // idle window after momentum before unlock
@@ -61,8 +62,6 @@ export function useScrollSnap(sections: number) {
       animDone.current = false
     }
 
-    registerNav((dir) => goTo(current.current + dir))
-
     function goTo(idx: number, ms = ANIM_MS, ease = easeInOutCubic) {
       const target = Math.max(0, Math.min(idx, sections - 1))
       if (target === current.current) return
@@ -76,6 +75,8 @@ export function useScrollSnap(sections: number) {
         wheelEndTimer.current = setTimeout(unlock, WHEELEND_MS)
       }, ms, ease)
     }
+
+    registerNav(goTo, () => current.current)
 
     function onWheel(e: WheelEvent) {
       e.preventDefault()
