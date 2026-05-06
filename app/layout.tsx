@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Fira_Code, Inter } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,8 @@ const firaCode = Fira_Code({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const BASE_URL = "https://purush-o7.github.io"
+const BASE_URL = "https://purush-o7.vercel.app"
+const GA_ID    = "G-0KNRVX5NH0"
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -177,13 +179,16 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", spaceGrotesk.variable, firaCode.variable, inter.variable, "font-sans")}
     >
-      <head>
+      <body className="min-h-full flex flex-col">
+        {/* JSON-LD structured data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-      </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+        {children}
+      </body>
+      {/* Google Analytics — loads after hydration, no render blocking */}
+      <GoogleAnalytics gaId={GA_ID} />
     </html>
   );
 }
