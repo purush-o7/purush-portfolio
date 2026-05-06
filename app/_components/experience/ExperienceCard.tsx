@@ -36,7 +36,7 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
         {/* Gradient base — bleeds to outer edges of wrapper */}
         <div style={{
           position:   "absolute", inset: 0,
-          background: `radial-gradient(ellipse 220% 110% at 0% 50%, ${entry.accent}cc 0%, ${entry.accent}44 50%, transparent 80%)`,
+          background: `radial-gradient(ellipse 200% 90% at 0% 50%, ${entry.accent}cc 0%, ${entry.accent}33 55%, transparent 75%)`,
           pointerEvents: "none",
         }} />
 

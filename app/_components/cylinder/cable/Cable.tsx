@@ -13,8 +13,6 @@ interface Props {
   timeRef:     React.MutableRefObject<number>
 }
 
-const BODY_PTS = 30
-
 export function Cable({ angle, cp, progressRef, timeRef }: Props) {
   const coreRef = useRef<THREE.Mesh>(null)
 
@@ -29,21 +27,31 @@ export function Cable({ angle, cp, progressRef, timeRef }: Props) {
     const p3 = (r: number, y: number, phi: number) =>
       new THREE.Vector3(r * Math.cos(phi), y, r * Math.sin(phi))
 
-    // Junction radius (where arm meets the arch) and arm-tip offset
     const jR    = rMin + arch
     const tipR  = jR + rStart * Math.cos(tiltR)
     const tipDY = rStart * Math.sin(tiltR)
 
-    // Full cable: tip → junction → helix body → junction → tip
+    // Physical model: thread constrained at 4 rings.
+    // Arms attach at ring angles; twist distributes evenly between the four rings.
+    //
+    //   bottom arm tip
+    //   bottom junction (jR)
+    //   bottom ring      <- thread enters cylinder at phiBot, no twist yet
+    //   lower bangle     <- h/4,  twisted TWIST * 0.25
+    //   upper bangle     <- 3h/4, twisted TWIST * 0.75
+    //   top ring         <- thread exits cylinder at phiTop
+    //   top junction (jR)
+    //   top arm tip
+
     const pts = [
-      p3(tipR, -halfH - arch - tipDY, phiBot),        // bottom arm tip
-      p3(jR,   -halfH - arch,         phiBot),        // bottom junction
-      ...Array.from({ length: BODY_PTS }, (_, k) => { // helical body
-        const t = k / (BODY_PTS - 1)
-        return p3(rMin, -halfH + t * H, phiBot + TWIST * t)
-      }),
-      p3(jR,    halfH + arch,         phiTop),        // top junction
-      p3(tipR,  halfH + arch + tipDY, phiTop),        // top arm tip
+      p3(tipR, -halfH - arch - tipDY, phiBot),              // bottom arm tip
+      p3(jR,   -halfH - arch,         phiBot),              // bottom junction
+      p3(rMin, -halfH,                phiBot),              // bottom ring
+      p3(rMin, -halfH + H * 0.25,     phiBot + TWIST * 0.25), // lower bangle (h/4)
+      p3(rMin, -halfH + H * 0.75,     phiBot + TWIST * 0.75), // upper bangle (3h/4)
+      p3(rMin,  halfH,                phiTop),              // top ring
+      p3(jR,    halfH + arch,         phiTop),              // top junction
+      p3(tipR,  halfH + arch + tipDY, phiTop),              // top arm tip
     ]
 
     const cG = new THREE.TubeGeometry(

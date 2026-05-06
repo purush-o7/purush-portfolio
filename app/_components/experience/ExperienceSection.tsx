@@ -44,7 +44,7 @@ export function ExperienceSection() {
         const mob = isMobileRef.current
 
         if (i < fullPlaced) {
-          // ── Peek strip: card is covered, shows left edge only ────────────
+          // ── Peek strip ────────────────────────────────────────────────────
           el.style.left         = `${i * peek}px`
           el.style.right        = "auto"
           el.style.width        = `${peek}px`
@@ -53,9 +53,10 @@ export function ExperienceSection() {
           el.style.top          = "0"
           el.style.bottom       = "0"
           el.style.transform    = "none"
+          el.style.opacity      = "1"
 
         } else if (i === fullPlaced) {
-          // ── Active card ───────────────────────────────────────────────────
+          // ── Active card — fades out as next card slides in ────────────────
           el.style.left         = `${fullPlaced * peek}px`
           el.style.right        = "0"
           el.style.top          = "0"
@@ -64,9 +65,10 @@ export function ExperienceSection() {
           el.style.borderRadius = "0"
           el.style.overflow     = "hidden"
           el.style.transform    = "none"
+          el.style.opacity      = "1"
 
         } else if (i === fullPlaced + 1) {
-          // ── Incoming card ─────────────────────────────────────────────────
+          // ── Incoming card — fades in as it slides in ──────────────────────
           const targetLeft  = (fullPlaced + 1) * peek
           const currentLeft = targetLeft + (1 - incomingT) * (W - targetLeft)
           el.style.left         = `${currentLeft}px`
@@ -77,6 +79,7 @@ export function ExperienceSection() {
           el.style.borderRadius = "0"
           el.style.overflow     = "hidden"
           el.style.transform    = "none"
+          el.style.opacity      = String(incomingT)
 
         } else {
           // ── Not yet placed ────────────────────────────────────────────────
@@ -88,6 +91,7 @@ export function ExperienceSection() {
           el.style.borderRadius = "0"
           el.style.overflow     = "hidden"
           el.style.transform    = "none"
+          el.style.opacity      = "0"
         }
       })
     }
