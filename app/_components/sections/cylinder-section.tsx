@@ -9,11 +9,11 @@ const CylinderScene = dynamic(
 )
 
 export function CylinderSection() {
-  // Visible at scroll ≥ 8vh while ExperienceSection (z-15) still covers us (z-12).
-  // Revealed as ExperienceSection exits upward during 8vh → 9vh.
+  // Visible at scroll ≥ 9vh while ExperienceSection (z-15) still covers us (z-12).
+  // Revealed as ExperienceSection exits upward during 9vh → 10vh.
   const p = useScrollProgress(
     typeof window !== "undefined" ? 10 : 10,
-    typeof window !== "undefined" ? 8 * window.innerHeight - 10 : 6390,
+    typeof window !== "undefined" ? 9 * window.innerHeight - 10 : 7190,
   )
 
   return (

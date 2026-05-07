@@ -39,7 +39,7 @@ export function Scene({ galaxy, cable, onExpand }: Props) {
       lastScrollY.current = window.scrollY
       if (dy > 0) rotDir.current =  1            // scroll down → forward
       if (dy < 0) rotDir.current = -1            // scroll up   → backward
-      progressRef.current = Math.max(0, Math.min((window.scrollY - 8 * vh) / vh, 1))
+      progressRef.current = Math.max(0, Math.min((window.scrollY - 9 * vh) / vh, 1))
     }
     function onMouse(e: MouseEvent) {
       mouseRaw.current.x =  (e.clientX / window.innerWidth  - 0.5) * 2

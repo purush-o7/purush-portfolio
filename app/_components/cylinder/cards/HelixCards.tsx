@@ -63,7 +63,7 @@ export function HelixCards({ onExpand }: Props) {
   useEffect(() => {
     function onScroll() {
       const vh = window.innerHeight
-      progressRef.current = Math.max(0, Math.min((window.scrollY - 9 * vh) / ((N + 1) * vh), 1))
+      progressRef.current = Math.max(0, Math.min((window.scrollY - 10 * vh) / ((N + 1) * vh), 1))
     }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })

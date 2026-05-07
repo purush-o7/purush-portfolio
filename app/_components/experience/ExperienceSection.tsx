@@ -17,12 +17,12 @@ export function ExperienceSection() {
 
   const visible = useScrollProgress(
     typeof window !== "undefined" ? 10 : 10,
-    typeof window !== "undefined" ? 3 * window.innerHeight - 10 : 2390,
+    typeof window !== "undefined" ? 4 * window.innerHeight - 10 : 3190,
   )
 
   const exit = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
-    typeof window !== "undefined" ? 8 * window.innerHeight : 6400,
+    typeof window !== "undefined" ? 9 * window.innerHeight : 7200,
   )
 
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -33,8 +33,8 @@ export function ExperienceSection() {
       const W    = window.innerWidth
       const peek = isMobileRef.current ? PEEK_MOBILE : PEEK
 
-      // cp: 0 → N-1 as scrollY goes from 4vh to (4+N-1)vh
-      const cp         = Math.max(0, Math.min((window.scrollY - 4 * h) / h, N - 1))
+      // cp: 0 → N-1 as scrollY goes from 5vh to (5+N-1)vh
+      const cp         = Math.max(0, Math.min((window.scrollY - 5 * h) / h, N - 1))
       const fullPlaced = Math.floor(cp)
       const incomingT  = cp - fullPlaced
 
