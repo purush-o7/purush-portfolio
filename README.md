@@ -41,7 +41,7 @@ A scroll-snapped, section-by-section journey through the stack, experience, and 
 
 **Scroll snap** — custom RAF-based snap engine (no CSS scroll-snap). Handles wheel, touch, and keyboard with easing curves and a lock/unlock cycle to prevent double-advances.
 
-**Scroll passthrough** — terminal and chat panels capture wheel events when they have content to scroll. Once you lift your fingers (200ms debounce = gesture ended), the next scroll hands off to the snap and advances the section. No fixed wait time — purely gesture-based.
+**Scroll passthrough** — terminal, chat, and experience content panels capture wheel events when they have content to scroll. Uses an overscroll accumulator: `deltaY` values are summed at the boundary; once the total exceeds **80px**, the event falls through to the snap engine and advances the section. No timers, no gesture detection — just distance. Works the same on both trackpad and mouse wheel. Add `data-scroll-passthrough` to any new scrollable container and it gets this behaviour for free.
 
 **Particle face** — 7,000 points loaded from a pre-generated JSON file. Each particle has position, colour, and stroke-direction for a traveling wave animation. Mouse proximity creates a warm amber glow; the repulsion ring is mapped to the canvas element bounds (not the window) so it tracks correctly regardless of layout.
 
@@ -95,19 +95,6 @@ app/
 - All sections are `position: fixed`, layered by z-index, and slide via `translateY` driven by `window.scrollY`. The "page" is just spacer divs — total height = `SECTIONS × 100vh`.
 - The Skills section animations reset only on upward scroll toward KovilLens, not when arriving from Experience. Intentional — you shouldn't have to re-watch an animation just because you scrolled up one section and back down.
 - `ssr: false` on all Three.js components. Non-negotiable. Don't remove it and then file an issue.
-
----
-
-## Generating particles
-
-The particle face is pre-generated. To regenerate with a different image:
-
-```bash
-cd scripts
-python generate_particles.py --input your_face.png --count 7000 --output ../public/particles.json
-```
-
-Requires `Pillow` and `numpy`. Samples pixels above a brightness threshold and outputs `[x, y, r, g, b, dx, dy]` tuples — `dx/dy` is the local stroke direction used by the wave animation.
 
 ---
 
