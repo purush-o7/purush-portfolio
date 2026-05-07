@@ -99,7 +99,7 @@ export function ProjectsSection() {
       className="fixed inset-0 z-20 bg-[#07070f] overflow-hidden"
       style={{
         visibility:    p > 0 && exit < 1 ? "visible" : "hidden",
-        transform:     `translateY(${((1 - p) - exit) * 100}vh)`,
+        transform:     `translateY(${(1 - p) * 100}vh)`,
         willChange:    "transform",
         display:       "flex",
         flexDirection: isMobile ? "column-reverse" : "row",

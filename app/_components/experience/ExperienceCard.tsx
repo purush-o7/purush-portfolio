@@ -162,7 +162,7 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
                   <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: isMobile ? 4 : 9 }}>
                     {sec.points.map((pt, pi) => (
                       <li key={pi} style={{
-                        fontFamily: MONO, fontSize: isMobile ? 10 : 13,
+                        fontFamily: MONO, fontSize: isMobile ? 10 : 12,
                         color: "rgba(255,255,255,0.55)", lineHeight: isMobile ? 1.5 : 1.7,
                         paddingLeft: 18, position: "relative",
                       }}>
