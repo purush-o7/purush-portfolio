@@ -10,7 +10,6 @@ const WHEELEND_MS    = 200   // idle window after momentum before unlock
 const DELTA_MIN      = 10    // minimum |deltaY| for intentional wheel tick
 const TOUCH_MIN      = 35    // px — distance threshold (slow deliberate drag)
 const VEL_SNAP       = 0.3   // px/ms — velocity threshold (quick flick)
-const PT_HANDOFF_MS  = 500   // ms the boundary must be held before handing off to snap
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
@@ -29,9 +28,11 @@ export function useScrollSnap(sections: number) {
   const touchStartY   = useRef(0)
   const touchStartT   = useRef(0)
   const rafRef        = useRef<number | null>(null)
-  // Stores the timestamp (ms) when a passthrough element first hit its boundary.
-  // 0 = not at boundary. Only hand off to snap after PT_HANDOFF_MS has elapsed.
-  const ptBoundary    = useRef(new WeakMap<HTMLElement, number>())
+  // Per-element state for passthrough scroll chaining.
+  // hit: boundary was reached; ready: gesture ended after boundary hit; timer: debounce id
+  const ptBoundary = useRef(new WeakMap<HTMLElement, {
+    hit: boolean; ready: boolean; timer: ReturnType<typeof setTimeout> | null
+  }>())
   // Touch: was the passthrough at boundary in the swipe direction when gesture started?
   const ptAtBoundaryOnTouchStart = useRef(false)
 
@@ -107,38 +108,36 @@ export function useScrollSnap(sections: number) {
       e.preventDefault()
       if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
 
-      // Passthrough scroll chaining with threshold:
-      // • Has room to scroll → scroll it, reset boundary timestamp
-      // • Hits boundary for the first time → record timestamp, consume event
-      // • Still at boundary but within PT_HANDOFF_MS → same gesture, consume
-      // • Still at boundary and PT_HANDOFF_MS elapsed → new scroll, hand off to snap
+      // Passthrough scroll chaining — gesture-based:
+      // • Has room → scroll element, clear state
+      // • At boundary, gesture ongoing → absorb, start WHEELEND_MS debounce timer
+      // • Timer fires (200ms gap = fingers lifted) → mark ready
+      // • Next wheel event when ready → hand off to snap
       const pt = getPassthrough(e.target)
       if (pt) {
-        const goingDown  = e.deltaY > 0
-        const hasRoom    = canScroll(pt, goingDown)
-        const boundaryT  = ptBoundary.current.get(pt) ?? 0
-        const now        = performance.now()
+        if (!ptBoundary.current.has(pt))
+          ptBoundary.current.set(pt, { hit: false, ready: false, timer: null })
+        const st = ptBoundary.current.get(pt)!
 
-        if (hasRoom) {
+        if (canScroll(pt, e.deltaY > 0)) {
           pt.scrollTop += e.deltaY
-          ptBoundary.current.set(pt, 0)   // reset — no longer at boundary
+          if (st.timer) clearTimeout(st.timer)
+          st.hit = false; st.ready = false; st.timer = null
           return
         }
 
-        if (boundaryT === 0) {
-          // First event at this boundary — stamp it, absorb
-          ptBoundary.current.set(pt, now)
+        // At boundary — ready means gesture already ended, so hand off now
+        if (st.ready) {
+          st.hit = false; st.ready = false
+          if (st.timer) { clearTimeout(st.timer); st.timer = null }
+          // fall through to snap
+        } else {
+          // Gesture still ongoing — absorb and debounce gesture end
+          st.hit = true
+          if (st.timer) clearTimeout(st.timer)
+          st.timer = setTimeout(() => { st.ready = true; st.timer = null }, WHEELEND_MS)
           return
         }
-
-        if (now - boundaryT < PT_HANDOFF_MS) {
-          // Within threshold — still the same scroll gesture, absorb
-          return
-        }
-
-        // Threshold elapsed → genuine new scroll → hand off
-        ptBoundary.current.set(pt, 0)
-        // fall through to snap logic
       }
 
       const intentional = Math.abs(e.deltaY) >= DELTA_MIN
