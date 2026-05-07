@@ -1,8 +1,9 @@
 "use client"
 
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
-import { CanvasWrapper } from "../canvas-wrapper"
-import { BioPanel } from "../bio-panel"
+import { CanvasWrapper }     from "../canvas-wrapper"
+import { BioPanel }          from "../bio-panel"
+import { HintOverlay }       from "./hint-overlay"
 
 export function HeroCard() {
   const p = useScrollProgress()
@@ -19,6 +20,7 @@ export function HeroCard() {
         {/* Canvas: top 50% on mobile, left 2/3 on desktop */}
         <section className="relative w-full md:w-2/3 h-1/2 md:h-full">
           <CanvasWrapper />
+          <HintOverlay />
         </section>
 
         {/* Divider: horizontal on mobile, vertical on desktop */}
