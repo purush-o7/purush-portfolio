@@ -5,6 +5,7 @@ import { Canvas, useFrame, useThree }                        from "@react-three/
 import { useGLTF, useTexture, Sky }                          from "@react-three/drei"
 import { EffectComposer, Bloom }                             from "@react-three/postprocessing"
 import * as THREE                                            from "three"
+import { useMobile }                                         from "../_hooks/use-mobile"
 
 type V3 = [number, number, number]
 
@@ -369,6 +370,8 @@ export function TempleViewer() {
     })
   }, [])
 
+  const isMobile = useMobile()
+
   // Fullscreen toggle
   const [isFullscreen, setIsFullscreen] = useState(false)
   useEffect(() => {
@@ -521,13 +524,44 @@ export function TempleViewer() {
         }} />
       </div>
 
+      {/* Mobile fullscreen exit — large pill at top-right, above safe area */}
+      {isMobile && isFullscreen && (
+        <button
+          onClick={() => setIsFullscreen(false)}
+          aria-label="Exit fullscreen"
+          className="absolute z-20 flex items-center gap-2 font-mono text-[11px] tracking-widest
+                     uppercase text-white/70 bg-[#07070f]/85 border border-white/20
+                     backdrop-blur-sm rounded-sm px-3"
+          style={{
+            top:    "max(20px, env(safe-area-inset-top, 20px))",
+            right:  16,
+            height: 44,  // iOS minimum tap target
+          }}
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <line x1="1" y1="1" x2="9" y2="9" />
+            <line x1="9" y1="1" x2="1" y2="9" />
+          </svg>
+          Exit
+        </button>
+      )}
+
       {/* Description + view preset buttons + fullscreen toggle */}
-      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2 items-start max-w-[280px]">
-        <p className="font-mono text-[9px] leading-relaxed text-white/30 select-none">
-          Consider this the trailer. The actual KovilLens experience layers gesture
-          controls, animated AR overlays, and game-like exploration onto a real
-          9th-century Chola temple — through a HoloLens&nbsp;2, with your bare hands.
-        </p>
+      <div
+        className="absolute left-4 z-10 flex flex-col gap-2 items-start max-w-[280px]"
+        style={{
+          bottom: isFullscreen && isMobile
+            ? "max(16px, env(safe-area-inset-bottom, 16px))"
+            : 16,
+        }}
+      >
+        {!isMobile && (
+          <p className="font-mono text-[9px] leading-relaxed text-white/30 select-none">
+            Consider this the trailer. The actual KovilLens experience layers gesture
+            controls, animated AR overlays, and game-like exploration onto a real
+            9th-century Chola temple — through a HoloLens&nbsp;2, with your bare hands.
+          </p>
+        )}
       <div className="flex gap-1.5 items-center">
         {([
           { label: "Front", angle: 0 },
@@ -551,25 +585,41 @@ export function TempleViewer() {
 
         <div className="w-px h-4 bg-white/10 mx-0.5" />
 
-        <button
-          onClick={() => setIsFullscreen(f => !f)}
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          className="p-1.5 bg-[#07070f]/70 border border-white/15 text-white/40
-                     hover:text-white/75 hover:border-white/35
-                     transition-colors duration-150 rounded-sm backdrop-blur-sm"
-        >
-          {isFullscreen ? (
-            // Compress icon
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M4 1v3H1M8 1v3h3M4 11v-3H1M8 11v-3h3" />
-            </svg>
-          ) : (
-            // Expand icon
+        {/* Desktop fullscreen toggle — on mobile the top-right Exit button handles this */}
+        {!isMobile && (
+          <button
+            onClick={() => setIsFullscreen(f => !f)}
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            className="p-1.5 bg-[#07070f]/70 border border-white/15 text-white/40
+                       hover:text-white/75 hover:border-white/35
+                       transition-colors duration-150 rounded-sm backdrop-blur-sm"
+          >
+            {isFullscreen ? (
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M4 1v3H1M8 1v3h3M4 11v-3H1M8 11v-3h3" />
+              </svg>
+            ) : (
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M1 4V1h3M8 1h3v3M11 8v3H8M3 11H1V8" />
+              </svg>
+            )}
+          </button>
+        )}
+
+        {/* Mobile fullscreen enter button (exit is the top-right pill) */}
+        {isMobile && !isFullscreen && (
+          <button
+            onClick={() => setIsFullscreen(true)}
+            aria-label="Enter fullscreen"
+            className="p-1.5 bg-[#07070f]/70 border border-white/15 text-white/40
+                       hover:text-white/75 hover:border-white/35
+                       transition-colors duration-150 rounded-sm backdrop-blur-sm"
+          >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <path d="M1 4V1h3M8 1h3v3M11 8v3H8M3 11H1V8" />
             </svg>
-          )}
-        </button>
+          </button>
+        )}
       </div>
       </div>
 

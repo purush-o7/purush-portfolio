@@ -57,7 +57,6 @@ export function ProjectsSection() {
     let raf: number
     function tick() {
       const half = track!.scrollWidth / 2
-      if (half < 1) { raf = requestAnimationFrame(tick); return }   // wait for layout after fullscreen
       posRef.current   -= (imgHoveredRef.current ? 0 : 0.5) + wheelVelRef.current
       wheelVelRef.current *= 0.92
       if (posRef.current < -half) posRef.current += half
@@ -256,7 +255,7 @@ export function ProjectsSection() {
         }}
       >
         {/* 3D canvas — fills available space */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-h-0">
           <TempleViewer />
           <p className="absolute bottom-3 left-0 right-0 text-center font-mono text-xs
                          tracking-[0.3em] uppercase text-white/15 pointer-events-none select-none">

@@ -21,11 +21,7 @@ export function useScrollProgress(
     }
     update()
     window.addEventListener("scroll", update, { passive: true })
-    window.addEventListener("resize", update, { passive: true })
-    return () => {
-      window.removeEventListener("scroll", update)
-      window.removeEventListener("resize", update)
-    }
+    return () => window.removeEventListener("scroll", update)
   }, [scrollDistance, offset])
 
   return progress
