@@ -10,6 +10,7 @@ const WHEELEND_MS    = 200   // idle window after momentum before unlock
 const DELTA_MIN      = 10    // minimum |deltaY| for intentional wheel tick
 const TOUCH_MIN      = 35    // px — distance threshold (slow deliberate drag)
 const VEL_SNAP       = 0.3   // px/ms — velocity threshold (quick flick)
+const OVERSCROLL_PX  = 80    // px of over-scroll at boundary before handing off to snap
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
@@ -28,11 +29,9 @@ export function useScrollSnap(sections: number) {
   const touchStartY   = useRef(0)
   const touchStartT   = useRef(0)
   const rafRef        = useRef<number | null>(null)
-  // Per-element state for passthrough scroll chaining.
-  // hit: boundary was reached; ready: gesture ended after boundary hit; timer: debounce id
-  const ptBoundary = useRef(new WeakMap<HTMLElement, {
-    hit: boolean; ready: boolean; timer: ReturnType<typeof setTimeout> | null
-  }>())
+  // Accumulated overscroll px per passthrough element.
+  // Resets when element has room to scroll again.
+  const ptOverscroll = useRef(new WeakMap<HTMLElement, number>())
   // Touch: was the passthrough at boundary in the swipe direction when gesture started?
   const ptAtBoundaryOnTouchStart = useRef(false)
 
@@ -108,36 +107,28 @@ export function useScrollSnap(sections: number) {
       e.preventDefault()
       if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
 
-      // Passthrough scroll chaining — gesture-based:
-      // • Has room → scroll element, clear state
-      // • At boundary, gesture ongoing → absorb, start WHEELEND_MS debounce timer
-      // • Timer fires (200ms gap = fingers lifted) → mark ready
-      // • Next wheel event when ready → hand off to snap
+      // Passthrough scroll chaining — overscroll accumulator:
+      // • Has room → scroll element, reset accumulator to 0
+      // • At boundary → accumulate |deltaY|; once total ≥ OVERSCROLL_PX, hand off to snap
+      // No timers — purely distance-based so it works on both trackpad and mouse wheel.
       const pt = getPassthrough(e.target)
       if (pt) {
-        if (!ptBoundary.current.has(pt))
-          ptBoundary.current.set(pt, { hit: false, ready: false, timer: null })
-        const st = ptBoundary.current.get(pt)!
-
         if (canScroll(pt, e.deltaY > 0)) {
           pt.scrollTop += e.deltaY
-          if (st.timer) clearTimeout(st.timer)
-          st.hit = false; st.ready = false; st.timer = null
+          ptOverscroll.current.set(pt, 0)   // reset — element has room
           return
         }
 
-        // At boundary — ready means gesture already ended, so hand off now
-        if (st.ready) {
-          st.hit = false; st.ready = false
-          if (st.timer) { clearTimeout(st.timer); st.timer = null }
-          // fall through to snap
-        } else {
-          // Gesture still ongoing — absorb and debounce gesture end
-          st.hit = true
-          if (st.timer) clearTimeout(st.timer)
-          st.timer = setTimeout(() => { st.ready = true; st.timer = null }, WHEELEND_MS)
-          return
-        }
+        // At boundary — accumulate overscroll
+        const prev  = ptOverscroll.current.get(pt) ?? 0
+        const total = prev + Math.abs(e.deltaY)
+        ptOverscroll.current.set(pt, total)
+
+        if (total < OVERSCROLL_PX) return   // still absorbing, not enough yet
+
+        // Threshold crossed — hand off and reset
+        ptOverscroll.current.set(pt, 0)
+        // fall through to snap logic
       }
 
       const intentional = Math.abs(e.deltaY) >= DELTA_MIN
