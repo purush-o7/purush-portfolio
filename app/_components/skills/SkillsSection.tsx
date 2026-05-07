@@ -83,7 +83,8 @@ export function SkillsSection() {
               borderBottom: "1px solid rgba(255,255,255,0.05)",
             }}>
               {(["code", "chat"] as MobTab[]).map(tab => {
-                const active = mobTab === tab
+                const active    = mobTab === tab
+                const chatGlow  = tab === "chat" && !active && phase >= 1
                 return (
                   <button
                     key={tab}
@@ -96,13 +97,16 @@ export function SkillsSection() {
                       background:   active ? "#07070f" : "transparent",
                       border:       "none",
                       borderBottom: active ? `1px solid ${ACCENT}` : "1px solid transparent",
-                      cursor: "pointer",
+                      cursor:       "pointer",
                     }}
                   >
                     <div style={{
                       width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
                       background: tab === "code" ? "#3B82F6" : "#D97706",
-                      opacity: active ? 1 : 0.35,
+                      opacity:    active ? 1 : chatGlow ? 1 : 0.35,
+                      boxShadow:  chatGlow ? "0 0 6px #D97706" : "none",
+                      animation:  chatGlow ? "sk-blink 1.8s ease-in-out infinite" : "none",
+                      transition: "opacity 0.3s, box-shadow 0.3s",
                     }} />
                     {tab}
                   </button>
