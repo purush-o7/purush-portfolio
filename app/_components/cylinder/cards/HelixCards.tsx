@@ -103,7 +103,9 @@ export function HelixCards({ onExpand }: Props) {
       const y         = -ORBIT_H + t * ORBIT_H * 2
       const sc      = Math.pow(Math.sin(t * Math.PI), 2)
       const opacity = Math.max(Math.pow(Math.sin(t * Math.PI), 0.4), t > 0.01 && t < 0.99 ? 0.12 : 0)
-      const expanded  = t <= 0.5 && sc > 0.90
+      // t < 0.54: keeps card expanded for ~30% of the departure animation and
+      // handles iOS Safari sub-pixel scrollY (t can land at 0.5001 instead of 0.5)
+      const expanded  = t < 0.54 && sc > 0.90
 
       // 1. 3-D tilt
       const tiltY = -Math.sin(angle) * 42
@@ -111,7 +113,9 @@ export function HelixCards({ onExpand }: Props) {
       d.style.opacity    = String(opacity)
       d.style.transform  = `perspective(900px) rotateY(${tiltY}deg) scale(${sc})`
       d.style.width      = expanded ? "260px" : "160px"
-      ex.style.maxHeight = expanded ? "260px" : "0px"
+      // scrollHeight = actual content height even when maxHeight:0, so the accordion
+      // always fits regardless of viewport width / text wrapping
+      ex.style.maxHeight = expanded ? `${ex.scrollHeight}px` : "0px"
       ex.style.opacity   = expanded ? "1"     : "0"
 
       // 4. CSS burst ring on expand transition

@@ -136,6 +136,7 @@ export function ExperienceCard({ entry, index, total, isMobile }: Props) {
           style={{
             position:  "absolute", inset: 0,
             overflowY: "auto",
+            overscrollBehavior: "contain",
           }}
         >
           <div style={{

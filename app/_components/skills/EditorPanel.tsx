@@ -153,7 +153,7 @@ export function EditorPanel({ active, onComplete, compact = false }: Props) {
       )}
 
       {/* ── Editor body ──────────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", overflow: "auto" }}>
+      <div data-scroll-passthrough style={{ flex: 1, display: "flex", overflow: "auto", overscrollBehavior: "contain" }}>
 
         {/* Line numbers */}
         <div style={{

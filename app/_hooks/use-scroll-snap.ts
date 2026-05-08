@@ -168,10 +168,9 @@ export function useScrollSnap(sections: number) {
     // scrollY past the current section before our snap takes over.
     // Exception: passthrough containers scroll natively; we only intercept at boundary.
     function onTouchMove(e: TouchEvent) {
-      if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
       const pt = getPassthrough(e.target)
       if (pt) return   // let browser scroll the element; boundary handled in touchEnd
-      e.preventDefault()
+      e.preventDefault()  // block native page scroll for everything else, including data-no-scroll-snap
     }
 
     function onTouchEnd(e: TouchEvent) {

@@ -60,7 +60,7 @@ export function HintOverlay() {
       <div style={{
         position:  "absolute",
         left:      "50%",
-        top:       isMobile ? "64%" : "72%",
+        top:       isMobile ? "75%" : "72%",
         transform: "translate(-50%, -50%)",
         display:   "flex",
         flexDirection: "column",
@@ -105,7 +105,7 @@ export function HintOverlay() {
           letterSpacing: "0.25em",
           textTransform: "uppercase",
         }}>
-          {isMobile ? "tap me" : "hover me"}
+          {isMobile ? "drag me" : "hover me"}
         </span>
 
       </div>

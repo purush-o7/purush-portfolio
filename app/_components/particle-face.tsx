@@ -129,8 +129,27 @@ function FaceParticles() {
       mouseRef.current.x =  ((e.clientX - rect.left) / rect.width  * 2 - 1) * 1.15
       mouseRef.current.y = -((e.clientY - rect.top)  / rect.height * 2 - 1) * 0.90
     }
+    function onTouchMove(e: TouchEvent) {
+      const touch = e.touches[0]
+      if (!touch) return
+      const rect = canvas.getBoundingClientRect()
+      // Ignore touches outside the canvas area (e.g. scrolling other sections)
+      if (touch.clientX < rect.left || touch.clientX > rect.right ||
+          touch.clientY < rect.top  || touch.clientY > rect.bottom) return
+      mouseRef.current.x =  ((touch.clientX - rect.left) / rect.width  * 2 - 1) * 1.15
+      mouseRef.current.y = -((touch.clientY - rect.top)  / rect.height * 2 - 1) * 0.90
+    }
+    function onTouchEnd() {
+      mouseRef.current = { x: 0, y: -0.45 }
+    }
     window.addEventListener("mousemove", onMouseMove)
-    return () => window.removeEventListener("mousemove", onMouseMove)
+    window.addEventListener("touchmove", onTouchMove, { passive: true })
+    window.addEventListener("touchend",  onTouchEnd,  { passive: true })
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove)
+      window.removeEventListener("touchmove", onTouchMove)
+      window.removeEventListener("touchend",  onTouchEnd)
+    }
   }, [geo, gl])
 
   useFrame(() => {

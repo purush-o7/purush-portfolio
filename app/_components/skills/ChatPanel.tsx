@@ -186,6 +186,7 @@ export function ChatPanel({ active, clearTrigger = 0, onClear, compact = false }
       {/* ── Messages ──────────────────────────────────────────────────────── */}
       <div ref={scrollRef} data-scroll-passthrough style={{
         flex: 1, overflow: "auto",
+        overscrollBehavior: "contain",
         padding: compact ? "10px 10px 6px" : "14px 14px 8px",
         display: "flex", flexDirection: "column", gap: compact ? 8 : 10,
       }}>
