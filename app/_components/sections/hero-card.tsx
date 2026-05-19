@@ -18,7 +18,7 @@ export function HeroCard() {
     >
       <main className="flex flex-col md:flex-row h-screen w-screen">
         {/* Canvas: top 50% on mobile, left 2/3 on desktop */}
-        <section className="relative w-full md:w-2/3 h-1/2 md:h-full">
+        <section className="relative w-full md:w-2/3 h-1/2 md:h-full" data-no-scroll-snap="true">
           <CanvasWrapper />
           <HintOverlay />
         </section>
