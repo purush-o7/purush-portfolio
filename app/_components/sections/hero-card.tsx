@@ -1,12 +1,14 @@
 "use client"
 
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
+import { useMobile }          from "../../_hooks/use-mobile"
 import { CanvasWrapper }     from "../canvas-wrapper"
 import { BioPanel }          from "../bio-panel"
 import { HintOverlay }       from "./hint-overlay"
 
 export function HeroCard() {
-  const p = useScrollProgress()
+  const p        = useScrollProgress()
+  const isMobile = useMobile()
 
   return (
     <div
@@ -18,7 +20,10 @@ export function HeroCard() {
     >
       <main className="flex flex-col md:flex-row h-screen w-screen">
         {/* Canvas: top 50% on mobile, left 2/3 on desktop */}
-        <section className="relative w-full md:w-2/3 h-1/2 md:h-full" data-no-scroll-snap="true">
+        <section
+          className="relative w-full md:w-2/3 h-1/2 md:h-full"
+          data-no-scroll-snap={isMobile ? "true" : undefined}
+        >
           <CanvasWrapper />
           <HintOverlay />
         </section>
