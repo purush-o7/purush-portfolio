@@ -524,19 +524,33 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     }
     lastPX = e.clientX; lastPY = e.clientY
   }
+  // click = press + release without travel (≥8px means drag/swipe — never a click)
+  let downX = 0, downY = 0, downWeight = -1, clickArmed = false
   const onDown = (e: PointerEvent) => {
     lastPX = e.clientX; lastPY = e.clientY
+    clickArmed = false
+    if ((e.target as HTMLElement | null)?.closest("button,a")) return   // UI elements own their clicks
     if (state !== "idle" && state !== "gate") return
+    downX = e.clientX; downY = e.clientY; clickArmed = true
+    const b = container.getBoundingClientRect()                          // fresh NDC — touch taps have no prior move
+    mouse.set(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1)
     ray.setFromCamera(mouse, camera)
     const hit = ray.intersectObjects(weights.map((w) => w.spr))[0]
-    if (hit) {
-      const idx = weights.findIndex((w) => w.spr === hit.object)
-      if (idx >= 0) opts.navToSnap?.(GATE_SNAP + 1 + idx)
-      return
-    }
-    if (state === "idle") dragging = true
+    downWeight = hit ? weights.findIndex((w) => w.spr === hit.object) : -1
+    if (state === "idle" && downWeight === -1) dragging = true
   }
-  const onUp = () => { dragging = false }
+  const onUp = (e: PointerEvent) => {
+    dragging = false
+    if (!clickArmed) return
+    clickArmed = false
+    if (Math.hypot(e.clientX - downX, e.clientY - downY) >= 8) return
+    if (state !== "idle" && state !== "gate") return
+    if (downWeight >= 0) {                                               // click/tap a mass → travel to it
+      paintDots(downWeight); opts.navToSnap?.(GATE_SNAP + 1 + downWeight)
+    } else if (state === "gate") {                                       // click/tap the gate → enter the wormhole
+      paintDots(0); opts.navToSnap?.(GATE_SNAP + 1)
+    }
+  }
   // touch: horizontal drag orbits; vertical swipes fall through to the page snap engine
   let tX = 0, tY = 0, touchMode: "look" | "pass" | null = null
   const onTS = (e: TouchEvent) => {
@@ -593,7 +607,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       camera.position.set(gateCam.x + px.x * 2.4, gateCam.y + px.y * 1.4, gateCam.z)
       camera.lookAt(gatePos.x, gatePos.y - 0.6, gatePos.z - 8)
       intro.style.opacity = "1"; guide.style.opacity = "1"
-      hint.style.opacity = hintSuppressed ? "0" : "0.9"; hint.textContent = "Scroll to enter ↓"
+      hint.style.opacity = hintSuppressed ? "0" : "0.9"; hint.textContent = isMobile ? "Swipe or tap to enter ↓" : "Scroll or click to enter ↓"
       warpLight.intensity = 0                                 // (dots painted at travel start — no per-frame reset)
     } else if (state === "warp") {
       warpT += dt

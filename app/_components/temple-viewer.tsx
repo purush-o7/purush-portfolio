@@ -6,6 +6,7 @@ import { useGLTF, useTexture, Sky }                          from "@react-three/
 import { EffectComposer, Bloom }                             from "@react-three/postprocessing"
 import * as THREE                                            from "three"
 import { useMobile }                                         from "../_hooks/use-mobile"
+import { trackProjectClick }                                 from "../_lib/analytics"
 
 type V3 = [number, number, number]
 
@@ -374,8 +375,11 @@ export function TempleViewer() {
 
   // Fullscreen toggle
   const [isFullscreen, setIsFullscreen] = useState(false)
+  // 3D controls stay locked behind an explicit "tap to explore" mask — until
+  // then every gesture (scroll, swipe) belongs to the page, not the temple.
+  const [armed, setArmed] = useState(false)
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setIsFullscreen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setIsFullscreen(false); setArmed(false) } }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [])
@@ -397,7 +401,7 @@ export function TempleViewer() {
 
   return (
     <div
-      data-no-scroll-snap="true"
+      data-no-scroll-snap={armed ? "true" : undefined}
       style={{
         position:    isFullscreen ? "fixed" : "relative",
         inset:       isFullscreen ? 0 : "auto",
@@ -406,7 +410,7 @@ export function TempleViewer() {
         height:      "100%",
         cursor:      activeGroup.current ? "grabbing" : "default",
         background:  "#07070f",
-        touchAction: "none",
+        touchAction: armed ? "none" : "auto",
       }}
       onPointerMove={e => {
         if (!activeGroup.current) return
@@ -418,9 +422,11 @@ export function TempleViewer() {
       onPointerUp={() => { activeGroup.current = null }}
       onPointerLeave={() => { activeGroup.current = null }}
       onWheel={e => {
+        if (!armed) return
         cameraDistRef.current = Math.max(5, Math.min(15, cameraDistRef.current + e.deltaY * 0.01))
       }}
       onTouchStart={e => {
+        if (!armed) return
         if (e.touches.length === 2) {
           activeGroup.current = null  // cancel single-finger drag when second finger arrives
           const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -430,6 +436,7 @@ export function TempleViewer() {
         }
       }}
       onTouchMove={e => {
+        if (!armed) return
         if (e.touches.length !== 2 || pinchDistRef.current === null) return
         const dx = e.touches[0].clientX - e.touches[1].clientX
         const dy = e.touches[0].clientY - e.touches[1].clientY
@@ -522,6 +529,39 @@ export function TempleViewer() {
         <div className="absolute inset-0" style={{
           background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.10) 3px, rgba(0,0,0,0.10) 4px)",
         }} />
+      </div>
+
+      {/* HoloLens story block — plain-words explainer + real-demo CTA, anchored
+          above the POV screen. z-45 keeps it alive through the mask AND 3D mode. */}
+      <div
+        className="absolute z-[45] flex flex-col items-end gap-2 pointer-events-none"
+        style={{ right: 16, bottom: 16, width: "29%" }}
+      >
+        <div className="flex flex-col items-end gap-2" style={{ minWidth: 210, maxWidth: 270 }}>
+          <p className="font-mono text-[9px] leading-relaxed text-right text-white/55 select-none
+                        bg-[#07070f]/70 backdrop-blur-sm border border-white/10 rounded-sm px-2.5 py-2">
+            See the tiny figure? They&apos;re wearing a{" "}
+            <span className="text-cyan-300/90">Microsoft HoloLens&nbsp;2</span> headset —
+            the small screen below shows the temple exactly as they see it,{" "}
+            <span className="text-cyan-300/90">through their eyes</span>. ↓
+          </p>
+          <a
+            href="https://drive.google.com/file/d/1lllf3tCQryNS4RoeqSIFmSF3VF5SIgCL/view"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackProjectClick("KovilLens · Real Demo")}
+            className="pointer-events-auto relative flex items-center gap-2 font-mono text-[10px] tracking-[0.18em]
+                       uppercase font-medium px-3.5 py-2 rounded-sm text-[#07070f] bg-[#FBBF24]
+                       hover:bg-[#ffd34d] hover:scale-[1.04] transition-all duration-150"
+            style={{ boxShadow: "0 0 26px rgba(251,191,36,0.35)" }}
+          >
+            <span className="absolute -inset-1 rounded-sm border border-[#FBBF24]/60 animate-pulse pointer-events-none" />
+            <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M0 0l9 5-9 5z" /></svg>
+            Watch the real demo
+          </a>
+        </div>
+        {/* spacer matching the POV pane so the block sits right on top of it */}
+        <div style={{ width: "100%", aspectRatio: `${POV_W}/${POV_H}` }} />
       </div>
 
       {/* Mobile fullscreen exit — large pill at top-right, above safe area */}
@@ -622,6 +662,44 @@ export function TempleViewer() {
         )}
       </div>
       </div>
+
+      {/* Activation mask — the page owns every gesture until the user opts in */}
+      {!armed && (
+        <button
+          onClick={() => setArmed(true)}
+          aria-label="Activate 3D controls"
+          className="absolute inset-0 z-40 flex items-center justify-center cursor-pointer group"
+          style={{ background: "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(7,7,15,.10), rgba(7,7,15,.55))" }}
+        >
+          <span className="relative flex flex-col items-center gap-1.5 px-6 py-4 bg-[#07070f]/75 backdrop-blur-sm
+                           transition-transform duration-200 group-hover:scale-[1.04]">
+            <span className="absolute -top-px -left-px w-3 h-3 border-t border-l border-cyan-400/70" />
+            <span className="absolute -top-px -right-px w-3 h-3 border-t border-r border-cyan-400/70" />
+            <span className="absolute -bottom-px -left-px w-3 h-3 border-b border-l border-cyan-400/70" />
+            <span className="absolute -bottom-px -right-px w-3 h-3 border-b border-r border-cyan-400/70" />
+            <span className="font-mono text-[11px] tracking-[0.3em] uppercase text-cyan-300/90 animate-pulse">
+              {isMobile ? "Tap to explore in 3D" : "Click to explore in 3D"}
+            </span>
+            <span className="font-mono text-[9px] tracking-[0.18em] uppercase text-white/40">
+              drag · rotate&nbsp;&nbsp;—&nbsp;&nbsp;{isMobile ? "pinch" : "scroll"} · zoom
+            </span>
+          </span>
+        </button>
+      )}
+
+      {/* Exit 3D — hands the gestures back to the page */}
+      {armed && !isFullscreen && (
+        <button
+          onClick={() => setArmed(false)}
+          aria-label="Exit 3D controls"
+          className="absolute top-3 right-3 z-40 font-mono text-[9px] tracking-widest uppercase px-2.5 py-1.5
+                     bg-[#07070f]/70 border border-white/15 text-white/45
+                     hover:text-white/80 hover:border-white/35
+                     transition-colors duration-150 rounded-sm backdrop-blur-sm"
+        >
+          ✕ Exit 3D
+        </button>
+      )}
 
     </div>
   )
