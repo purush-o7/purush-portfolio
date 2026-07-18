@@ -398,6 +398,48 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   const hint = mk(`position:absolute;left:50%;bottom:${isMobile ? 56 : 100}px;transform:translateX(-50%);z-index:5;pointer-events:none;font-family:${MONO};font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#c3cede;transition:opacity .4s;white-space:nowrap;background:rgba(5,8,14,.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:7px 14px;`)
 
   // ── nav — desktop: glass dock (D3) · mobile: edge rail (M4) · tooltips: HUD callout (T3) ──
+  // ── gate status line — "AWAITING TRAVELLER / AUTHENTICATING… / ACCESS
+  // GRANTED / GATE SEALED", centred low inside the ring, fade+tracking reveal ──
+  const gateKf = document.createElement("style")
+  gateKf.textContent =
+    "@keyframes jgdot{0%,60%,100%{opacity:.15}30%{opacity:1}}" +
+    "@keyframes jgbreathe{0%,100%{opacity:.5}50%{opacity:1}}"
+  container.appendChild(gateKf)
+  els.push(gateKf as unknown as HTMLElement)
+  const gateText = mk(`position:absolute;left:0;top:0;z-index:5;pointer-events:none;font-family:${MONO};font-size:${isMobile ? 9 : 11}px;text-transform:uppercase;color:#8bf0ff;white-space:nowrap;opacity:0;letter-spacing:.6em;transform:translate(-50%,-50%);text-shadow:0 0 12px rgba(139,240,255,.35);transition:opacity .45s,letter-spacing .45s,color .3s,text-shadow .3s,transform .3s;`)
+  let gateTextCur = ""
+  function setGateText(txt: string, color: string, breathe: boolean, strong = false) {
+    if (gateTextCur === txt) return
+    gateTextCur = txt
+    gateText.style.animation = "none"
+    gateText.innerHTML = txt === "AUTHENTICATING"
+      ? `AUTHENTICATING<span style="animation:jgdot 1.1s infinite 0s">.</span><span style="animation:jgdot 1.1s infinite .18s">.</span><span style="animation:jgdot 1.1s infinite .36s">.</span>`
+      : txt
+    gateText.style.color = color
+    gateText.style.transition = "none"                       // restart the fade+tracking reveal
+    gateText.style.opacity = "0"
+    gateText.style.letterSpacing = ".6em"
+    void gateText.offsetHeight
+    gateText.style.transition = "opacity .45s,letter-spacing .45s,color .3s,text-shadow .3s,transform .3s"
+    gateText.style.opacity = "1"
+    gateText.style.letterSpacing = ".3em"
+    gateText.style.transform = strong ? "translate(-50%,-50%) scale(1.08)" : "translate(-50%,-50%)"
+    gateText.style.textShadow = strong ? "0 0 20px rgba(223,252,255,.85)" : "0 0 12px rgba(139,240,255,.35)"
+    if (breathe) gateText.style.animation = "jgbreathe 2.6s ease-in-out .5s infinite"
+  }
+  function placeGateText() {
+    const gs = project3(_gt.set(gatePos.x, gatePos.y - 3.3, gatePos.z))
+    gateText.style.left = `${gs.x}px`
+    gateText.style.top = `${gs.y}px`
+  }
+  function hideGateText() {
+    if (gateTextCur === "") return
+    gateTextCur = ""
+    gateText.style.animation = "none"
+    gateText.style.opacity = "0"
+  }
+  const _gt = new THREE.Vector3()
+
   const dots = mk(isMobile
     ? "position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:auto;"
     : "position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:5px;padding:8px 12px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);pointer-events:auto;")
@@ -528,11 +570,13 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   }
 
   // ── state machine ─────────────────────────────────────
-  type State = "gate" | "warp" | "fly" | "idle"
+  type State = "gate" | "warp" | "fly" | "idle" | "retreat"
   let state: State = "gate", focus = -1, desired = -1, T = 0, grow = 0, focusT0 = 0
   let dragging = false, lastPX = 0, lastPY = 0, yaw = 0, pitch = 0, engagedUntil = 0
   let warpT = 0, warpDur = 0, warpTarget = 0, swappedIn = false, swappedOut = false
   let flyT = 0, flyDur = 2.8, flyTarget = 0
+  let retT = 0, retDur = 3.0, lockReleaseAt = 0
+  const retFrom = new THREE.Vector3(), retCtrl = new THREE.Vector3(), retLook = new THREE.Vector3()
   const camStart = new THREE.Vector3(), diveTarget = new THREE.Vector3(), camAhead = new THREE.Vector3()
   const flyFrom = new THREE.Vector3(), flyCtrl = new THREE.Vector3(), flyToV = new THREE.Vector3()
   const lookFrom = new THREE.Vector3(), lookTo = new THREE.Vector3(), _look = new THREE.Vector3(), _b1 = new THREE.Vector3(), _b2 = new THREE.Vector3()
@@ -581,6 +625,21 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     flyCtrl.addScaledVector(perp, (tf % 2 === 0 ? 1 : -1) * 5)
   }
 
+  // Exit is NOT a wormhole: the camera rises far away — the whole field
+  // shrinking below — then settles at the gate porch, where the gate LOCKS
+  // (chevrons slam) and eases open again, ready for the next entry.
+  function retreatTo() {
+    if (state !== "idle") return
+    state = "retreat"; retT = 0; yaw = 0; pitch = 0
+    paintDots(-1)
+    retFrom.copy(camera.position)
+    retLook.copy(wWorld(focus))
+    retCtrl.copy(retFrom).lerp(gateCam, 0.45)
+    retCtrl.y = Math.max(retFrom.y, gateCam.y) + 34          // high above the field
+    retDur = 2.6 + retFrom.distanceTo(gateCam) * 0.006
+    intro.style.opacity = "0"; hint.style.opacity = "0"
+  }
+
   // controller: reconcile scroll-driven target with the state machine.
   // Gate departures get a PRE-LAUNCH phase: the chevron slam plays fully at the
   // gate (~650ms) before the wormhole ignites — identical for scroll and click.
@@ -598,7 +657,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     }
     else if (state === "gate" && desired === -1 && preLaunchAt !== 0) { preLaunchAt = 0; chevTarget = 1 }
     else if (state === "idle") {
-      if (desired === -1) warpTo(-1)
+      if (desired === -1) retreatTo()
       else if (desired !== focus) flyTo(desired)
     } else if (state === "fly" && desired >= 0 && desired !== flyTarget) {
       flyTo(desired)                                          // direct redirect — no A→B→C chaining
@@ -723,6 +782,12 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       camera.up.set(0, 1, 0)
       camera.position.set(gateCam.x + px.x * 2.4, gateCam.y + px.y * 1.4, gateCam.z)
       camera.lookAt(gatePos.x, gatePos.y - 0.6, gatePos.z - 8)
+      if (lockReleaseAt !== 0 && performance.now() > lockReleaseAt) { lockReleaseAt = 0; if (preLaunchAt === 0) chevTarget = 1 }
+      placeGateText()
+      if (preLaunchAt !== 0) {
+        if (performance.now() - preLaunchAt > 470) setGateText("ACCESS GRANTED", "#dffcff", false, true)
+        else setGateText("AUTHENTICATING", "#8bf0ff", false)
+      } else setGateText("AWAITING TRAVELLER", "#8bf0ff", true)
       intro.style.opacity = "1"; guide.style.opacity = "1"
       hint.style.opacity = hintSuppressed ? "0" : "0.9"; hint.textContent = isMobile ? "Swipe or tap to enter ↓" : "Scroll or click to enter ↓"
       warpLight.intensity = 0                                 // (dots painted at travel start — no per-frame reset)
@@ -737,6 +802,13 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       else { fa = 1 - (p - 0.87) / 0.13; fs = 3.3 }
       flash.style.opacity = fa.toFixed(3)
       flash.style.transform = `scale(${fs.toFixed(3)})`
+      if (warpTarget >= 0 && p < 0.2 && gateTextCur !== "") {
+        // ACCESS GRANTED dissolves in lockstep with the flood
+        placeGateText()
+        gateText.style.transition = "letter-spacing .45s,color .3s,text-shadow .3s,transform .3s"
+        gateText.style.opacity = clamp(1 - fa * 1.15, 0, 1).toFixed(3)
+        if (fa >= 0.86) { gateTextCur = ""; gateText.style.animation = "none"; gateText.style.opacity = "0" }
+      } else hideGateText()
 
       if (p < 0.16) {
         camera.position.lerpVectors(camStart, diveTarget, easeInOut(p / 0.16))
@@ -822,6 +894,28 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       if (flyT >= flyDur) {
         state = "idle"; focus = flyTarget; focusT0 = t; paintProj(focus); camera.up.set(0, 1, 0)
         settleFrom.copy(camera.position); settleLook.copy(lastLook)
+      }
+    } else if (state === "retreat") {
+      // rising farewell — the field shrinks below, then the gate porch
+      retT += dt
+      const p = easeInOut(clamp(retT / retDur, 0, 1))
+      _b1.copy(retFrom).lerp(retCtrl, p); _b2.copy(retCtrl).lerp(gateCam, p)
+      camera.position.copy(_b1.lerp(_b2, p))
+      camera.position.x += px.x * 2.4 * p; camera.position.y += px.y * 1.4 * p   // blends into the gate pose
+      const l1 = easeInOut(clamp(p / 0.5, 0, 1))              // weight → field centre
+      const l2 = easeInOut(clamp((p - 0.55) / 0.45, 0, 1))    // field centre → gate
+      const cx = retLook.x * (1 - l1), cy = retLook.y * (1 - l1) - 2 * l1, cz = retLook.z * (1 - l1)
+      _look.set(cx + (gatePos.x - cx) * l2, cy + (gatePos.y - 0.6 - cy) * l2, cz + (gatePos.z - 8 - cz) * l2)
+      camera.up.set(0, 1, 0)
+      camera.lookAt(_look)
+      lastLook.copy(_look)
+      warpLight.intensity = 0
+      hideGateText()
+      if (retT >= retDur) {
+        state = "gate"; focus = -1
+        preLaunchAt = 0; gateActivating = false
+        chevTarget = 0; ringBoost = Math.max(ringBoost, 1.3)  // GATE LOCK — slams shut behind you…
+        lockReleaseAt = performance.now() + 950               // …then eases open, ready again
       }
     } else {
       // idle — parked at a weight
