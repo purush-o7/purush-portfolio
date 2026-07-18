@@ -3,12 +3,12 @@
 import dynamic from "next/dynamic"
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
 
-const CylinderScene = dynamic(
-  () => import("../cylinder").then((m) => m.CylinderScene),
+const JourneyScene = dynamic(
+  () => import("../journey/JourneyScene").then((m) => m.JourneyScene),
   { ssr: false },
 )
 
-export function CylinderSection() {
+export function JourneySection() {
   // Visible at scroll ≥ 9vh while ExperienceSection (z-15) still covers us (z-12).
   // Revealed as ExperienceSection exits upward during 9vh → 10vh.
   const p = useScrollProgress(
@@ -24,7 +24,7 @@ export function CylinderSection() {
         visibility: p >= 1 ? "visible" : "hidden",
       }}
     >
-      <CylinderScene />
+      <JourneyScene />
     </div>
   )
 }

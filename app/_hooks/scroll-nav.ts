@@ -16,6 +16,11 @@ export function registerNav(
   _getCurrent = getCurrent
 }
 
+// Jump straight to a snap index (used by the Journey dots / gate button)
+export function navToIndex(idx: number) {
+  if (_goTo) _goTo(idx)
+}
+
 export function navSection(dir: 1 | -1) {
   if (!_goTo || !_getCurrent) return
   const cur = _getCurrent()

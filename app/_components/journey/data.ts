@@ -121,5 +121,5 @@ export const DEMO_CARDS: CardData[] = [
   },
 ]
 
-export const ORBIT_R = 5   // world-unit orbit radius
-export const ORBIT_H = 8   // half-height (y: −8 → +8)
+// Distinct weight colour per project on the gravity fabric (awards land on gold/amber)
+export const WEIGHT_COLORS = ["#00e5ff", "#34d399", "#f87171", "#60a5fa", "#a78bfa", "#ffb020", "#f59e0b"]

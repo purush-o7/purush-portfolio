@@ -85,7 +85,7 @@ export function useScrollSnap(sections: number) {
 
     registerNav(goTo, () => current.current)
 
-    const SECTION_NAMES = ["Hero", "Education", "Projects", "Skills", "Experience", "Cylinder", "Footer"]
+    const SECTION_NAMES = ["Hero", "Education", "Projects", "Skills", "Experience", "Journey", "Footer"]
     function onSectionChange(idx: number) {
       const si = [...SECTION_STARTS].reverse().findIndex(s => idx >= s)
       const name = SECTION_NAMES[SECTION_STARTS.length - 1 - si]

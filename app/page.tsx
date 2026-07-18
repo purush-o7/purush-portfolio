@@ -5,14 +5,14 @@ import { CareerTimeline }     from "./_components/sections/career-timeline"
 import { ProjectsSection }    from "./_components/sections/projects-section"
 import { ExperienceSection }  from "./_components/experience"
 import { SkillsSection }      from "./_components/skills"
-import { CylinderSection }    from "./_components/sections/cylinder-section"
+import { JourneySection }     from "./_components/sections/journey-section"
 import { FooterSection }      from "./_components/sections/footer-section"
 import { ScrollSnap }         from "./_components/scroll-snap"
 import { SectionNav }         from "./_components/section-nav"
-import { DEMO_CARDS }         from "./_components/cylinder/cards/data"
+import { DEMO_CARDS }         from "./_components/journey/data"
 
 // 10 fixed snaps (0–9: hero, edu×2, projects, skills, experience×5)
-// + 1 cylinder approach + 1 snap per orbit card + 1 footer
+// + 1 journey gateway + 1 snap per project weight + 1 footer
 const SECTIONS = 10 + DEMO_CARDS.length + 1 + 1
 
 export default function Home() {
@@ -49,8 +49,8 @@ export default function Home() {
       {/* ── Experience — slides up on scroll 400vh → 500vh ─────────────── */}
       <ExperienceSection />
 
-      {/* ── Cylinder — revealed on scroll 400vh → 500vh ─────────────────── */}
-      <CylinderSection />
+      {/* ── Journey (gravity wells + wormhole) — revealed 900vh → 1000vh ── */}
+      <JourneySection />
 
       {/* ── Footer — peacock canvas + contact, last snap ─────────────────── */}
       <FooterSection triggerVh={SECTIONS - 1} />
