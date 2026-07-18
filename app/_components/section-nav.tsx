@@ -47,7 +47,11 @@ export function SectionNav() {
           b.style.color        = "rgba(255,255,255,0.7)"
         }}
       >
-        ↑
+        {/* double chevron — jumps a whole section, not one step */}
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 7.5 L7 3.5 L11 7.5" />
+          <path d="M3 11.5 L7 7.5 L11 11.5" />
+        </svg>
       </button>
 
       {/* Down */}
@@ -83,7 +87,11 @@ export function SectionNav() {
           b.style.color        = "rgba(255,255,255,0.7)"
         }}
       >
-        ↓
+        {/* double chevron — jumps a whole section, not one step */}
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 2.5 L7 6.5 L11 2.5" />
+          <path d="M3 6.5 L7 10.5 L11 6.5" />
+        </svg>
       </button>
     </div>
   )

@@ -23,6 +23,7 @@ const GATE_SNAP = 10                      // page snap index of the gateway
 
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
+const smoothstep = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t) }
 
 function glowTexture(size = 128): THREE.CanvasTexture {
   const c = document.createElement("canvas")
@@ -91,12 +92,21 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   })
 
   const isMobile = container.clientWidth < 768
-  const W = 112
-  const N = isMobile ? 76 : 104                              // lighter fabric on mobile
+  const W = 160                                              // vast — the sheet reads as endless
+  const N = isMobile ? 80 : 116                              // lighter fabric on mobile
   const plane = new THREE.PlaneGeometry(W, W, N, N)
   plane.rotateX(-Math.PI / 2)
   const pos = plane.attributes.position as THREE.BufferAttribute
   const base = Float32Array.from(pos.array as Float32Array)
+  // radial horizon fade — the fabric dissolves into darkness in a circle, so it
+  // never shows a hard square edge (precomputed: zero per-frame cost)
+  const edgeFade = new Float32Array(pos.count)
+  const liveIdx: number[] = []                               // vertices inside the horizon — the only ones worth animating
+  for (let k = 0; k < pos.count; k++) {
+    const d = Math.hypot(base[k * 3], base[k * 3 + 2])
+    edgeFade[k] = 1 - smoothstep(W * 0.275, W * 0.49, d)
+    if (edgeFade[k] > 0.004) liveIdx.push(k)
+  }
   const colArr = new Float32Array(pos.count * 3)
   plane.setAttribute("color", new THREE.BufferAttribute(colArr, 3))
   scene.add(new THREE.Points(plane, new THREE.PointsMaterial({ size: 0.12, vertexColors: true, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, map: glowTexture(64), sizeAttenuation: true })))
@@ -113,6 +123,12 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   const starGeo = new THREE.BufferGeometry()
   starGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3))
   scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: "#28344e", size: 0.4, transparent: true, opacity: 0.7, depthWrite: false })))
+  // abyss stars — BELOW the sheet, seen through the weave when looking down at a project
+  const underN = 520, uPos = new Float32Array(underN * 3)
+  for (let i = 0; i < underN; i++) uPos.set([(Math.random() - 0.5) * 300, -18 - Math.random() * 120, (Math.random() - 0.5) * 300], i * 3)
+  const underGeo = new THREE.BufferGeometry()
+  underGeo.setAttribute("position", new THREE.BufferAttribute(uPos, 3))
+  scene.add(new THREE.Points(underGeo, new THREE.PointsMaterial({ color: "#2b3252", size: 0.38, transparent: true, opacity: 0.65, depthWrite: false })))
 
   // ── cosmic silk ribbons — barely-seen layers drifting high above ──
   // Twisting strip meshes with a bright core fading to transparent edges,
@@ -121,13 +137,16 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   // Each ribbon lives in its own Y-rotated group so together they sweep the
   // WHOLE sky (0° / 120° / 240° azimuths), not just one side.
   interface RibbonCfg { col: string; y0: number; z0: number; amp: number; freq: number; sp: number; halfW: number; phase: number; op: number; rotY: number }
+  // ordered so the mobile slice still gets a mix of above- and below-sheet silk
   const RIBBONS: RibbonCfg[] = [
     { col: "#2e7fb8", y0: 60, z0: -115, amp: 10, freq: 1.6, sp: 0.10, halfW: 7, phase: 0, op: 0.09, rotY: 0 },
+    { col: "#4a3f8f", y0: -58, z0: -125, amp: 12, freq: 1.3, sp: -0.09, halfW: 9, phase: 1.2, op: 0.08, rotY: 1.05 },   // twilight beneath the sheet
     { col: "#6b5bd6", y0: 78, z0: -165, amp: 13, freq: 1.2, sp: -0.07, halfW: 9, phase: 2.1, op: 0.08, rotY: 2.09 },
+    { col: "#1f6f8a", y0: -82, z0: -150, amp: 14, freq: 1.1, sp: 0.06, halfW: 10, phase: 3.3, op: 0.07, rotY: 3.14 },   // deeper abyss band
     { col: "#2f8a7d", y0: 70, z0: -140, amp: 11, freq: 1.4, sp: 0.08, halfW: 8, phase: 4.0, op: 0.075, rotY: 4.19 },
   ]
   const RIB_SEGS = 200, RIB_SPAN = 560, RIB_SPARKS = 90
-  const ribbons = RIBBONS.slice(0, isMobile ? 2 : 3).map((cfg) => {
+  const ribbons = RIBBONS.slice(0, isMobile ? 3 : 5).map((cfg) => {
     const S = RIB_SEGS + 1
     const geo = new THREE.BufferGeometry()
     const p = new Float32Array(S * 3 * 3)                     // 3 rows: edge / core / edge
@@ -178,15 +197,23 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   }
 
   // ── thin threads — the gravity well woven as a proper grid ──
+  // vertex-coloured so the threads dissolve at the same circular horizon as the dots
   const GRID_STEP = 2
-  const threadMat = new THREE.LineBasicMaterial({ color: "#35648a", transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })
+  const threadMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })
+  const threadCol = new THREE.Color("#35648a")
   const gridLines: Array<{ geo: THREE.BufferGeometry; ks: number[] }> = []
   const SIDE = N + 1
   function addGridLine(ks: number[]) {
     const g = new THREE.BufferGeometry()
     const p = new Float32Array(ks.length * 3)
-    ks.forEach((k, i) => { p[i * 3] = base[k * 3]; p[i * 3 + 1] = 0; p[i * 3 + 2] = base[k * 3 + 2] })
+    const c = new Float32Array(ks.length * 3)
+    ks.forEach((k, i) => {
+      p[i * 3] = base[k * 3]; p[i * 3 + 1] = 0; p[i * 3 + 2] = base[k * 3 + 2]
+      const f = edgeFade[k]
+      c[i * 3] = threadCol.r * f; c[i * 3 + 1] = threadCol.g * f; c[i * 3 + 2] = threadCol.b * f
+    })
     g.setAttribute("position", new THREE.BufferAttribute(p, 3))
+    g.setAttribute("color", new THREE.BufferAttribute(c, 3))
     scene.add(new THREE.Line(g, threadMat))
     gridLines.push({ geo: g, ks })
   }
@@ -243,7 +270,6 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   // visible, controlled end instead of extending past the screen.
   const SPOT_H = 11, SPOT_R = 8.5   // wide splay — beam spans the card's width at card level
   const FADE_START = 0.4, FADE_END = 0.64   // gone just above card level — never reaches the screen top
-  const smoothstep = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t) }
   const spot = new THREE.Group()
   scene.add(spot)
   const coneGeo = new THREE.ConeGeometry(SPOT_R, SPOT_H, 48, 24, true)
@@ -276,6 +302,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   const WHITE = new THREE.Color("#fff")
   let tunnel: THREE.Group | null = null
   let curve: THREE.CatmullRomCurve3 | null = null
+  const tunnelRings: THREE.Mesh[] = []                       // for camera-proximity culling during rides
   const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _Z = new THREE.Vector3(0, 0, 1), _tan = new THREE.Vector3()
   const endSpark = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: "#fff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }))
   endSpark.visible = false
@@ -301,6 +328,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     const len = curve.getLength()
     const nR = clamp(Math.round(len / 2.6), 26, 80)
     const ringGeo = new THREE.TorusGeometry(4.05, 0.05, 12, 84)   // thin, smooth
+    tunnelRings.length = 0
     for (let i = 0; i <= nR; i++) {
       const u = i / nR
       curve.getPointAt(u, _p)
@@ -310,6 +338,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       m.quaternion.copy(_q.setFromUnitVectors(_Z, _tan))
       m.scale.setScalar(i % ringMats.length === 0 ? 1.1 : 1)
       tunnel.add(m)
+      tunnelRings.push(m)
     }
     const fr = curve.computeFrenetFrames(60, false)
     for (let r = 0; r < 8; r++) {
@@ -513,13 +542,18 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
 
   const ORBIT_R = 12
   const wWorld = (i: number) => new THREE.Vector3(weights[i].x, fieldY(weights[i].x, weights[i].z, T) + 0.6, weights[i].z)
+  // camera heights are anchored to the fabric at the ORBIT RING (the rim),
+  // never the well bottom — a deepening well must not drag the camera under the sheet
   function vantage(i: number) {
     const w = weights[i], a = Math.atan2(w.z, w.x)
-    return new THREE.Vector3(w.x + Math.cos(a) * ORBIT_R, fieldY(w.x, w.z, T) + 7, w.z + Math.sin(a) * ORBIT_R)
+    const ox = w.x + Math.cos(a) * ORBIT_R, oz = w.z + Math.sin(a) * ORBIT_R
+    return new THREE.Vector3(ox, fieldY(ox, oz, T) + 6.5, oz)
   }
 
   function warpTo(tf: number) {
     if (state === "warp") return
+    gateActivating = false
+    if (tf === -1) chevTarget = 1                            // heading home — chevrons part for the arrival
     warpTarget = tf; state = "warp"; warpT = 0; swappedIn = false; swappedOut = false; yaw = 0; pitch = 0
     paintDots(tf === -1 ? -1 : tf)                           // nav leads, the camera follows
     warpDur = 4.2 + Math.random() * 1.4
@@ -547,9 +581,22 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     flyCtrl.addScaledVector(perp, (tf % 2 === 0 ? 1 : -1) * 5)
   }
 
-  // controller: reconcile scroll-driven target with the state machine
+  // controller: reconcile scroll-driven target with the state machine.
+  // Gate departures get a PRE-LAUNCH phase: the chevron slam plays fully at the
+  // gate (~650ms) before the wormhole ignites — identical for scroll and click.
+  let preLaunchAt = 0
   function reconcile() {
-    if (state === "gate" && desired >= 0) warpTo(desired)
+    if (state === "gate" && desired >= 0) {
+      if (preLaunchAt === 0) {
+        preLaunchAt = performance.now()
+        chevTarget = 0
+        ringBoost = Math.max(ringBoost, 1.7)
+      } else if (performance.now() - preLaunchAt > 650) {
+        preLaunchAt = 0
+        warpTo(desired)
+      }
+    }
+    else if (state === "gate" && desired === -1 && preLaunchAt !== 0) { preLaunchAt = 0; chevTarget = 1 }
     else if (state === "idle") {
       if (desired === -1) warpTo(-1)
       else if (desired !== focus) flyTo(desired)
@@ -573,17 +620,16 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     }
     lastPX = e.clientX; lastPY = e.clientY
   }
-  // Omnitrix activation: chevrons slam, rings spin up, then the wormhole fires
+  // Omnitrix activation (click): slam starts NOW and plays during the page
+  // scroll; reconcile's pre-launch gate holds the warp until the slam has run.
   function activateGate() {
     if (gateActivating || state !== "gate") return
     gateActivating = true
     chevTarget = 0
-    ringBoost = 1.7
-    window.setTimeout(() => {
-      paintDots(0)
-      opts.navToSnap?.(GATE_SNAP + 1)
-      window.setTimeout(() => { chevTarget = 1; gateActivating = false }, 1400)  // reset for the next visit
-    }, 640)
+    ringBoost = Math.max(ringBoost, 1.7)
+    preLaunchAt = performance.now()
+    paintDots(0)
+    opts.navToSnap?.(GATE_SNAP + 1)
   }
 
   // click = press + release without travel (≥8px means drag/swipe — never a click)
@@ -726,6 +772,9 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
           endSpark.scale.setScalar(clamp(28 / Math.max(dE, 1), 1.5, 28))
           canvas.style.filter = `blur(${(fly * fly * 5).toFixed(2)}px)`
         }
+        // hide rings sweeping through the camera plane — kills the edge-on
+        // "dissection" flash (only visible when facing them on the reverse ride)
+        for (const rg of tunnelRings) rg.visible = rg.position.distanceToSquared(camera.position) > 6.5
         warpLight.position.copy(camera.position)                       // metallic glints on the rings
         warpLight.intensity = 2.6
       } else {
@@ -744,15 +793,17 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
           camera.position.lerpVectors(handFrom, gateCam, q)
           camera.lookAt(_b2.set(gatePos.x, gatePos.y - 0.6, gatePos.z - 8).multiplyScalar(q).addScaledVector(handLook, 1 - q))
         } else {
-          const w = weights[focus], A = Math.atan2(w.z, w.x), wy = fieldY(w.x, w.z, t)
-          _b1.set(w.x + Math.cos(A) * ORBIT_R, wy + 7.8, w.z + Math.sin(A) * ORBIT_R)
+          const w = weights[focus], A = Math.atan2(w.z, w.x)
+          const ox = w.x + Math.cos(A) * ORBIT_R, oz = w.z + Math.sin(A) * ORBIT_R
+          _b1.set(ox, fieldY(ox, oz, t) + 6.5, oz)
           camera.position.lerpVectors(handFrom, _b1, q)
-          camera.lookAt(_b2.set(w.x, wy + 2.6, w.z).multiplyScalar(q).addScaledVector(handLook, 1 - q))
+          camera.lookAt(_b2.set(w.x, fieldY(w.x, w.z, t) + 2.6, w.z).multiplyScalar(q).addScaledVector(handLook, 1 - q))
         }
         lastLook.copy(_b2)
       }
       if (p >= 1) {
         state = focus === -1 ? "gate" : "idle"
+        if (focus === -1) { chevTarget = 1; gateActivating = false }   // gate rests open again
         flash.style.opacity = "0"; flash.style.transform = "scale(1)"; canvas.style.filter = "none"
         focusT0 = t; settleFrom.copy(camera.position); settleLook.copy(lastLook)
       }
@@ -779,8 +830,9 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       const push = easeInOut(clamp((t - focusT0 - 0.5) / 1.8, 0, 1))
       camera.up.set(0, 1, 0)
       const A = Math.atan2(w.z, w.x) + yaw + Math.sin(t * 0.3) * 0.1
-      const EL = clamp(7.8 + pitch * 9, 2.6, 15)
-      _b1.set(w.x + Math.cos(A) * ORBIT_R + px.x * 1.2, fieldY(w.x, w.z, t) + EL - push * 1.0, w.z + Math.sin(A) * ORBIT_R)
+      const ox = w.x + Math.cos(A) * ORBIT_R, oz = w.z + Math.sin(A) * ORBIT_R
+      const EL = clamp(6.5 + pitch * 9, 3.4, 15)               // rim-anchored — never dips under the sheet
+      _b1.set(ox + px.x * 1.2, fieldY(ox, oz, t) + EL - push * 1.0, oz)
       camera.position.lerpVectors(settleFrom, _b1, settle)
       _look.set(w.x, fieldY(w.x, w.z, t) + 2.6, w.z)
       camera.lookAt(_b2.lerpVectors(settleLook, _look, settle))
@@ -802,9 +854,9 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       w.mass += (tgt - w.mass) * 0.035
     })
 
-    // fabric
+    // fabric — only the vertices inside the horizon are animated (dead zone is invisible)
     const arr = pos.array as Float32Array
-    for (let k = 0; k < pos.count; k++) {
+    for (const k of liveIdx) {
       const x = base[k * 3], z = base[k * 3 + 2]
       let tot = 0, cr = 0, cg = 0, cb = 0
       for (const w of weights) {
@@ -813,7 +865,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
         tot += inf; cr += inf * w.col.r; cg += inf * w.col.g; cb += inf * w.col.b
       }
       arr[k * 3 + 1] = -tot + Math.sin(Math.hypot(x, z) * 0.28 - t * 1.1) * 0.14
-      const b = Math.pow(clamp(tot / 6, 0, 1), 0.62), inv = tot > 0 ? 1 / tot : 0
+      const b = Math.pow(clamp(tot / 6, 0, 1), 0.62) * edgeFade[k], inv = tot > 0 ? 1 / tot : 0
       colArr[k * 3] = cr * inv * b; colArr[k * 3 + 1] = cg * inv * b; colArr[k * 3 + 2] = cb * inv * b
     }
     pos.needsUpdate = true
@@ -863,7 +915,8 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
         if (t >= mt.nextAt) {
           mt.active = true; mt.t0 = t; mt.dur = 0.9 + Math.random() * 0.8
           const a = Math.random() * Math.PI * 2, r = 130 + Math.random() * 90
-          mt.from.set(Math.cos(a) * r, 55 + Math.random() * 55, Math.sin(a) * r)
+          const below = Math.random() < 0.4                   // some streak beneath the sheet
+          mt.from.set(Math.cos(a) * r, below ? -(25 + Math.random() * 70) : 55 + Math.random() * 55, Math.sin(a) * r)
           const da = a + Math.PI / 2 + (Math.random() - 0.5) * 0.8
           mt.dir.set(Math.cos(da), -(0.25 + Math.random() * 0.35), Math.sin(da)).normalize()
           mt.speed = 90 + Math.random() * 70
