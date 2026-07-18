@@ -105,9 +105,10 @@ export function ProjectsSection() {
         flexDirection: isMobile ? "column-reverse" : "row",
       }}
     >
-      {/* ── Info panel — bottom 40% on mobile, left 2/5 on desktop ─────────── */}
+      {/* ── Info panel — bottom 40% on mobile (scrollable), left 2/5 on desktop ── */}
       <div
-        className="relative flex flex-col justify-center overflow-hidden shrink-0"
+        className="relative flex flex-col shrink-0"
+        data-scroll-passthrough={isMobile ? "true" : undefined}
         style={{
           width:        isMobile ? "100%" : "40%",
           height:       isMobile ? "40%" : "100%",
@@ -115,6 +116,10 @@ export function ProjectsSection() {
           gap:          isMobile ? 12 : 28,
           borderTop:    isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
           borderRight:  isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
+          justifyContent:     isMobile ? "flex-start" : "center",
+          overflowY:          isMobile ? "auto" : "hidden",
+          overflowX:          "hidden",
+          overscrollBehavior: "contain",
         }}
       >
 
@@ -181,9 +186,8 @@ export function ProjectsSection() {
 
           {!isMobile && (
             <div className="flex flex-col gap-3">
-              <Row label="Published" value="IEEE ICVR 2025 · Wageningen" />
-              <Row label="Role"      value="Research Assistant · Feb – May 2023" />
-              <Row label="Impact"    value="~15 fps → 60 fps optimisation" />
+              <Row label="Role"   value="Research Assistant · Feb – May 2023" />
+              <Row label="Impact" value="~15 fps → 60 fps optimisation" />
             </div>
           )}
 
@@ -196,6 +200,33 @@ export function ProjectsSection() {
               </span>
             ))}
           </div>
+
+          {/* ── Publications — plain-words credibility block ─────────────── */}
+          <div className="flex flex-col" style={{ gap: isMobile ? 8 : 10 }}>
+            <p className="font-mono tracking-[0.3em] uppercase text-white/30"
+               style={{ fontSize: isMobile ? 9 : 10 }}>
+              Publications
+            </p>
+
+            {/* 1 · conference paper — published & indexed */}
+            <div className="flex flex-col gap-1.5 border-l-2 border-emerald-400/60 pl-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono tracking-widest uppercase rounded-sm px-2 py-0.5
+                                 bg-emerald-400/15 border border-emerald-400/50 text-emerald-300"
+                      style={{ fontSize: isMobile ? 9 : 10 }}>
+                  ✓ Published
+                </span>
+                <span className="font-mono text-white/60"
+                      style={{ fontSize: isMobile ? 10 : 11 }}>
+                  IEEE ICVR 2025 · Wageningen, NL
+                </span>
+              </div>
+              <p className="font-mono text-white/40"
+                 style={{ fontSize: isMobile ? 9 : 10, lineHeight: 1.7 }}>
+                Peer-reviewed conference paper — indexed on{" "}
+                <span className="text-white/70">IEEE Xplore</span> &{" "}
+                <span className="text-white/70">Scopus</span>.
+              </p>
 
           <motion.a
             href="https://ieeexplore.ieee.org/abstract/document/11172645"
@@ -242,6 +273,20 @@ export function ProjectsSection() {
               ↗
             </motion.span>
           </motion.a>
+            </div>
+
+            {/* 2 · journal — extended version, not yet submitted */}
+            <div className="flex items-center gap-2 flex-wrap border-l-2 border-amber-400/30 pl-3">
+              <span className="font-mono tracking-widest uppercase rounded-sm px-2 py-0.5
+                               border border-amber-400/40 text-amber-300/80"
+                    style={{ fontSize: isMobile ? 9 : 10 }}>
+                Yet to submit
+              </span>
+              <span className="font-mono text-white/45" style={{ fontSize: isMobile ? 10 : 11 }}>
+                Journal — extended version, in preparation
+              </span>
+            </div>
+          </div>
         </motion.div>
       </div>
 

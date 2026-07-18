@@ -380,8 +380,17 @@ export function TempleViewer() {
   const [armed, setArmed] = useState(false)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setIsFullscreen(false); setArmed(false) } }
+    // Auto-exit 3D when the user scrolls to another section (KovilLens sits at
+    // snap 3 of the page scroll budget — see page.tsx). Half a viewport away = gone.
+    const onScroll = () => {
+      if (Math.abs(window.scrollY - 3 * window.innerHeight) > window.innerHeight * 0.5) setArmed(false)
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
     window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      window.removeEventListener("scroll", onScroll)
+    }
   }, [])
 
   // Pinch-to-zoom refs
@@ -531,37 +540,44 @@ export function TempleViewer() {
         }} />
       </div>
 
-      {/* HoloLens story block — plain-words explainer + real-demo CTA, anchored
-          above the POV screen. z-45 keeps it alive through the mask AND 3D mode. */}
-      <div
-        className="absolute z-[45] flex flex-col items-end gap-2 pointer-events-none"
-        style={{ right: 16, bottom: 16, width: "29%" }}
+      {/* HoloLens explainer — top-left, plain words. Survives mask AND 3D mode. */}
+      <p
+        className="absolute z-[45] pointer-events-none font-mono leading-relaxed text-left text-white/55 select-none
+                   bg-[#07070f]/70 backdrop-blur-sm border border-white/10 rounded-sm px-2.5 py-2"
+        style={{ top: 12, left: 12, maxWidth: isMobile ? 200 : 265, fontSize: isMobile ? 8 : 9 }}
       >
-        <div className="flex flex-col items-end gap-2" style={{ minWidth: 210, maxWidth: 270 }}>
-          <p className="font-mono text-[9px] leading-relaxed text-right text-white/55 select-none
-                        bg-[#07070f]/70 backdrop-blur-sm border border-white/10 rounded-sm px-2.5 py-2">
-            See the tiny figure? They&apos;re wearing a{" "}
-            <span className="text-cyan-300/90">Microsoft HoloLens&nbsp;2</span> headset —
-            the small screen below shows the temple exactly as they see it,{" "}
-            <span className="text-cyan-300/90">through their eyes</span>. ↓
-          </p>
-          <a
-            href="https://drive.google.com/file/d/1lllf3tCQryNS4RoeqSIFmSF3VF5SIgCL/view"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackProjectClick("KovilLens · Real Demo")}
-            className="pointer-events-auto relative flex items-center gap-2 font-mono text-[10px] tracking-[0.18em]
-                       uppercase font-medium px-3.5 py-2 rounded-sm text-[#07070f] bg-[#FBBF24]
-                       hover:bg-[#ffd34d] hover:scale-[1.04] transition-all duration-150"
-            style={{ boxShadow: "0 0 26px rgba(251,191,36,0.35)" }}
-          >
-            <span className="absolute -inset-1 rounded-sm border border-[#FBBF24]/60 animate-pulse pointer-events-none" />
-            <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M0 0l9 5-9 5z" /></svg>
-            Watch the real demo
-          </a>
-        </div>
-        {/* spacer matching the POV pane so the block sits right on top of it */}
-        <div style={{ width: "100%", aspectRatio: `${POV_W}/${POV_H}` }} />
+        See the tiny figure? They&apos;re wearing a{" "}
+        <span className="text-cyan-300/90">Microsoft HoloLens&nbsp;2</span> headset —
+        the small screen at the bottom-right shows the temple exactly as they see it,{" "}
+        <span className="text-cyan-300/90">through their eyes</span>.
+      </p>
+
+      {/* Real-demo CTA — bottom-left, stacked above the description/presets block */}
+      <div
+        className="absolute z-[45] pointer-events-none"
+        style={{
+          left:   16,
+          bottom: isMobile ? "calc(max(16px, env(safe-area-inset-bottom, 16px)) + 44px)" : 132,
+        }}
+      >
+        <a
+          href="https://drive.google.com/file/d/1lllf3tCQryNS4RoeqSIFmSF3VF5SIgCL/view"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackProjectClick("KovilLens · Real Demo")}
+          className="pointer-events-auto relative inline-flex items-center gap-2 font-mono tracking-[0.18em]
+                     uppercase font-medium rounded-sm text-[#07070f] bg-[#FBBF24]
+                     hover:bg-[#ffd34d] hover:scale-[1.04] transition-all duration-150"
+          style={{
+            fontSize: isMobile ? 9 : 10,
+            padding:  isMobile ? "7px 12px" : "8px 14px",
+            boxShadow: "0 0 26px rgba(251,191,36,0.35)",
+          }}
+        >
+          <span className="absolute -inset-1 rounded-sm border border-[#FBBF24]/60 animate-pulse pointer-events-none" />
+          <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M0 0l9 5-9 5z" /></svg>
+          Watch the real demo
+        </a>
       </div>
 
       {/* Mobile fullscreen exit — large pill at top-right, above safe area */}
@@ -687,7 +703,7 @@ export function TempleViewer() {
         </button>
       )}
 
-      {/* Exit 3D — hands the gestures back to the page */}
+      {/* Exit 3D — hands the gestures back to the page (top-right; caption owns top-left) */}
       {armed && !isFullscreen && (
         <button
           onClick={() => setArmed(false)}

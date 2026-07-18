@@ -44,7 +44,7 @@ function glowTexture(size = 128): THREE.CanvasTexture {
 interface Weight {
   x: number; z: number
   col: THREE.Color
-  mass: number; r: number
+  mass: number; massBase: number; r: number
   spr: THREE.Sprite
   base: number
   award: boolean
@@ -86,7 +86,8 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     const col = new THREE.Color(WEIGHT_COLORS[i % WEIGHT_COLORS.length])
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: col, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }))
     scene.add(spr)
-    return { x: Math.cos(a) * r, z: Math.sin(a) * r, col, mass: award ? 4.8 : 3.2, r: 4.4, spr, base: award ? 3.4 : 2.9, award }
+    const mass = award ? 4.8 : 3.2
+    return { x: Math.cos(a) * r, z: Math.sin(a) * r, col, mass, massBase: mass, r: 4.4, spr, base: award ? 3.4 : 2.9, award }
   })
 
   const isMobile = container.clientWidth < 768
@@ -117,13 +118,16 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   // Twisting strip meshes with a bright core fading to transparent edges,
   // plus a dusting of sparkles riding each ribbon. Palette stays on the site's
   // violet/deep-cyan so the ribbons read as weather, not a third voice.
-  interface RibbonCfg { col: string; y0: number; z0: number; amp: number; freq: number; sp: number; halfW: number; phase: number; op: number }
+  // Each ribbon lives in its own Y-rotated group so together they sweep the
+  // WHOLE sky (0° / 120° / 240° azimuths), not just one side.
+  interface RibbonCfg { col: string; y0: number; z0: number; amp: number; freq: number; sp: number; halfW: number; phase: number; op: number; rotY: number }
   const RIBBONS: RibbonCfg[] = [
-    { col: "#2e7fb8", y0: 60, z0: -115, amp: 10, freq: 1.6, sp: 0.10, halfW: 7, phase: 0, op: 0.09 },
-    { col: "#6b5bd6", y0: 78, z0: -165, amp: 13, freq: 1.2, sp: -0.07, halfW: 9, phase: 2.1, op: 0.08 },
+    { col: "#2e7fb8", y0: 60, z0: -115, amp: 10, freq: 1.6, sp: 0.10, halfW: 7, phase: 0, op: 0.09, rotY: 0 },
+    { col: "#6b5bd6", y0: 78, z0: -165, amp: 13, freq: 1.2, sp: -0.07, halfW: 9, phase: 2.1, op: 0.08, rotY: 2.09 },
+    { col: "#2f8a7d", y0: 70, z0: -140, amp: 11, freq: 1.4, sp: 0.08, halfW: 8, phase: 4.0, op: 0.075, rotY: 4.19 },
   ]
   const RIB_SEGS = 200, RIB_SPAN = 560, RIB_SPARKS = 90
-  const ribbons = RIBBONS.slice(0, isMobile ? 1 : 2).map((cfg) => {
+  const ribbons = RIBBONS.slice(0, isMobile ? 2 : 3).map((cfg) => {
     const S = RIB_SEGS + 1
     const geo = new THREE.BufferGeometry()
     const p = new Float32Array(S * 3 * 3)                     // 3 rows: edge / core / edge
@@ -143,19 +147,22 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
         idx.push(v, v + 1, v + S, v + 1, v + S + 1, v + S)
       }
     geo.setIndex(idx)
+    const grp = new THREE.Group()
+    grp.rotation.y = cfg.rotY
+    scene.add(grp)
     const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: cfg.op, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }))
-    scene.add(mesh)
+    grp.add(mesh)
     // sparkles riding the ribbon
     const sparkGeo = new THREE.BufferGeometry()
     sparkGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(RIB_SPARKS * 3), 3))
     const sparkU = new Float32Array(RIB_SPARKS), sparkJ = new Float32Array(RIB_SPARKS * 2)
     for (let i = 0; i < RIB_SPARKS; i++) { sparkU[i] = Math.random(); sparkJ[i * 2] = (Math.random() - 0.5) * cfg.halfW * 1.6; sparkJ[i * 2 + 1] = (Math.random() - 0.5) * 3 }
-    scene.add(new THREE.Points(sparkGeo, new THREE.PointsMaterial({ map: glow, color: col.clone().lerp(new THREE.Color("#ffffff"), 0.55), size: 1.15, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true, fog: false })))
+    grp.add(new THREE.Points(sparkGeo, new THREE.PointsMaterial({ map: glow, color: col.clone().lerp(new THREE.Color("#ffffff"), 0.55), size: 1.15, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true, fog: false })))
     return { cfg, geo, sparkGeo, sparkU, sparkJ }
   })
 
   // ── shooting stars — rare thin streaks crossing the deep sky ──
-  const METEORS = 3, MTRAIL = 12
+  const METEORS = 5, MTRAIL = 12
   interface Meteor { line: THREE.Line; mat: THREE.LineBasicMaterial; active: boolean; t0: number; dur: number; nextAt: number; from: THREE.Vector3; dir: THREE.Vector3; speed: number }
   const meteors: Meteor[] = []
   for (let m = 0; m < METEORS; m++) {
@@ -167,7 +174,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })
     const line = new THREE.Line(g, mat)
     scene.add(line)
-    meteors.push({ line, mat, active: false, t0: 0, dur: 1, nextAt: 2 + m * 3 + Math.random() * 4, from: new THREE.Vector3(), dir: new THREE.Vector3(), speed: 100 })
+    meteors.push({ line, mat, active: false, t0: 0, dur: 1, nextAt: 1 + m * 1.4 + Math.random() * 2.5, from: new THREE.Vector3(), dir: new THREE.Vector3(), speed: 100 })
   }
 
   // ── thin threads — the gravity well woven as a proper grid ──
@@ -208,6 +215,22 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   const dashRing = new THREE.Line(new THREE.BufferGeometry().setFromPoints(dashPts), new THREE.LineDashedMaterial({ color: gateCol, dashSize: 0.5, gapSize: 0.42, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending }))
   dashRing.computeLineDistances()
   gate.add(dashRing)
+  // Omnitrix core — two chevrons ("> <") that slam together when the gate activates
+  const chevMat = new THREE.LineBasicMaterial({ color: gateCol, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending })
+  function makeChevron(dir: 1 | -1): THREE.Group {
+    const grp = new THREE.Group()
+    grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(dir * 1.15, -1.35, 0), new THREE.Vector3(0, 0, 0), new THREE.Vector3(dir * 1.15, 1.35, 0),
+    ]), chevMat))
+    grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(dir * 1.5, -1.75, 0), new THREE.Vector3(dir * 0.35, 0, 0), new THREE.Vector3(dir * 1.5, 1.75, 0),
+    ]), chevMat))
+    gate.add(grp)
+    return grp
+  }
+  const chevL = makeChevron(-1)   // ">" on the left, apex toward centre
+  const chevR = makeChevron(1)    // "<" on the right — together: the hourglass
+  let chevOff = 1, chevTarget = 1, ringBoost = 0, dashPhase = 0, tickPhase = 0, gateActivating = false
   for (let k = 0; k < 7; k++) {
     const z = 2.5 + k * 2.2, s = 0.5 - k * 0.05
     const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-s, -2.6, z), new THREE.Vector3(s, -2.6, z)])
@@ -324,14 +347,26 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     `<div style="position:absolute;left:50%;top:50%;transform:translate(-260px,-190px);font-size:9.5px;letter-spacing:.22em;color:rgba(139,240,255,.75)">GATE 01 · PROJECTS</div>` +
     `<div style="position:absolute;left:50%;top:50%;transform:translate(160px,-190px);font-size:9.5px;letter-spacing:.22em;color:rgba(139,240,255,.55)">ALIGN ▸ OK</div>` +
     `<div style="position:absolute;left:50%;top:50%;transform:translate(-260px,176px);font-size:9.5px;letter-spacing:.22em;color:rgba(139,240,255,.55)">Σ mᵢ/(1+(d/rᵢ)²)</div>` +
-    `<div style="position:absolute;left:50%;top:50%;transform:translate(160px,176px);font-size:9.5px;letter-spacing:.22em;color:rgba(139,240,255,.75)">7 MASSES · 1 FABRIC</div>`
-  const intro = mk(`position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:5;max-width:540px;width:calc(100% - 80px);text-align:center;pointer-events:none;transition:opacity .5s;font-family:${DISP};`)
+    `<div style="position:absolute;left:50%;top:50%;transform:translate(160px,176px);font-size:9.5px;letter-spacing:.22em;color:rgba(139,240,255,.75)">MASSES · ONE FABRIC</div>`
+  // HUD-styled intro panel — mono, uppercase, bracket corners; terminal, not landing page
+  const intro = mk(`position:absolute;left:50%;top:36px;transform:translateX(-50%);z-index:5;max-width:${isMobile ? 420 : 560}px;width:calc(100% - 64px);text-align:center;pointer-events:none;transition:opacity .5s;background:rgba(5,8,14,.58);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:${isMobile ? "14px 16px 15px" : "20px 30px 22px"};`)
   intro.innerHTML =
-    `<div style="font-family:${MONO};font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#8bf0ff;margin-bottom:10px">Gateway · Projects</div>` +
-    `<div style="font-size:30px;font-weight:600;color:#fff;margin-bottom:10px">Seven weights on one fabric</div>` +
-    `<div style="font-size:13.5px;line-height:1.6;color:#c2cadb;max-width:440px;margin:0 auto">Every project bends the same spacetime. One wormhole in, one wormhole out — cinematic flight between.</div>`
+    `<i style="position:absolute;top:-1px;left:-1px;width:10px;height:10px;border-top:1px solid rgba(139,240,255,.65);border-left:1px solid rgba(139,240,255,.65)"></i>` +
+    `<i style="position:absolute;top:-1px;right:-1px;width:10px;height:10px;border-top:1px solid rgba(139,240,255,.65);border-right:1px solid rgba(139,240,255,.65)"></i>` +
+    `<i style="position:absolute;bottom:-1px;left:-1px;width:10px;height:10px;border-bottom:1px solid rgba(139,240,255,.65);border-left:1px solid rgba(139,240,255,.65)"></i>` +
+    `<i style="position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-bottom:1px solid rgba(139,240,255,.65);border-right:1px solid rgba(139,240,255,.65)"></i>` +
+    `<div style="display:flex;align-items:center;justify-content:center;gap:12px">` +
+    `<span style="height:1px;width:${isMobile ? 20 : 38}px;background:linear-gradient(90deg,transparent,rgba(139,240,255,.5))"></span>` +
+    `<span style="font-family:${MONO};font-size:${isMobile ? 8.5 : 10}px;letter-spacing:.34em;text-transform:uppercase;color:#8bf0ff">Gateway · Projects</span>` +
+    `<span style="height:1px;width:${isMobile ? 20 : 38}px;background:linear-gradient(270deg,transparent,rgba(139,240,255,.5))"></span>` +
+    `</div>` +
+    `<div style="font-family:${DISP};font-weight:600;font-size:${isMobile ? 14 : 21}px;letter-spacing:${isMobile ? ".16em" : ".24em"};text-transform:uppercase;color:#fff;margin:${isMobile ? "10px 0 8px" : "14px 0 11px"};text-shadow:0 0 26px rgba(0,229,255,.25)">Projects · One Fabric</div>` +
+    `<div style="font-family:${MONO};font-size:${isMobile ? 8.5 : 10.5}px;letter-spacing:.14em;line-height:2;color:#8a9cb5;text-transform:uppercase">Every project bends the same spacetime<br>One wormhole in · one out · cinematic flight between</div>`
   const proj = mk(`position:absolute;left:0;top:0;z-index:5;width:min(300px,calc(100vw - 48px));pointer-events:none;font-family:${DISP};opacity:0;background:rgba(6,9,16,.78);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:15px 17px;box-shadow:0 24px 70px -24px #000;`)
-  const hint = mk(`position:absolute;left:50%;bottom:${isMobile ? 56 : 100}px;transform:translateX(-50%);z-index:5;pointer-events:none;font-family:${MONO};font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#9fb0c8;transition:opacity .4s;white-space:nowrap;`)
+  // desktop corner annotations — quiet HUD text while parked at a project
+  const cornerTL = isMobile ? null : mk(`position:absolute;top:20px;left:22px;z-index:5;pointer-events:none;font-family:${MONO};opacity:0;transition:opacity .5s;border-left:2px solid transparent;padding-left:11px;`)
+  const cornerTR = isMobile ? null : mk(`position:absolute;top:20px;right:22px;z-index:5;pointer-events:none;font-family:${MONO};opacity:0;transition:opacity .5s;text-align:right;max-width:310px;border-right:2px solid transparent;padding-right:11px;`)
+  const hint = mk(`position:absolute;left:50%;bottom:${isMobile ? 56 : 100}px;transform:translateX(-50%);z-index:5;pointer-events:none;font-family:${MONO};font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#c3cede;transition:opacity .4s;white-space:nowrap;background:rgba(5,8,14,.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:7px 14px;`)
 
   // ── nav — desktop: glass dock (D3) · mobile: edge rail (M4) · tooltips: HUD callout (T3) ──
   const dots = mk(isMobile
@@ -446,6 +481,20 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       (hasLink ? `<a href="${p.link}" target="_blank" rel="noopener noreferrer" style="pointer-events:auto;display:inline-block;font-family:${MONO};font-size:10.5px;letter-spacing:.18em;color:${ac};text-decoration:none;border-bottom:1px solid ${ac}55;padding-bottom:2px">VIEW PROJECT ↗</a>` : "")
     const a = proj.querySelector("a")
     if (a) a.addEventListener("click", () => opts.onProjectClick?.(p.title))
+    if (cornerTL) {
+      cornerTL.style.borderLeftColor = ac + "88"
+      cornerTL.innerHTML =
+        `<div style="font-size:9px;letter-spacing:.3em;color:#79839a;text-transform:uppercase;margin-bottom:5px">Now viewing</div>` +
+        `<div style="font-size:12px;letter-spacing:.18em;color:${ac};text-transform:uppercase">0${i + 1} · ${p.title}</div>` +
+        `<div style="font-size:9px;letter-spacing:.2em;color:rgba(233,237,246,.5);text-transform:uppercase;margin-top:4px">${p.tag}</div>`
+    }
+    if (cornerTR) {
+      cornerTR.style.borderRightColor = ac + "55"
+      const note = p.points[0].length > 120 ? p.points[0].slice(0, 117) + "…" : p.points[0]
+      cornerTR.innerHTML =
+        `<div style="font-size:9px;letter-spacing:.3em;color:#79839a;text-transform:uppercase;margin-bottom:5px">Field note</div>` +
+        `<div style="font-size:10px;line-height:1.7;color:rgba(233,237,246,.55)">${note}</div>`
+    }
     paintDots(i)
   }
 
@@ -524,6 +573,19 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     }
     lastPX = e.clientX; lastPY = e.clientY
   }
+  // Omnitrix activation: chevrons slam, rings spin up, then the wormhole fires
+  function activateGate() {
+    if (gateActivating || state !== "gate") return
+    gateActivating = true
+    chevTarget = 0
+    ringBoost = 1.7
+    window.setTimeout(() => {
+      paintDots(0)
+      opts.navToSnap?.(GATE_SNAP + 1)
+      window.setTimeout(() => { chevTarget = 1; gateActivating = false }, 1400)  // reset for the next visit
+    }, 640)
+  }
+
   // click = press + release without travel (≥8px means drag/swipe — never a click)
   let downX = 0, downY = 0, downWeight = -1, clickArmed = false
   const onDown = (e: PointerEvent) => {
@@ -547,8 +609,8 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     if (state !== "idle" && state !== "gate") return
     if (downWeight >= 0) {                                               // click/tap a mass → travel to it
       paintDots(downWeight); opts.navToSnap?.(GATE_SNAP + 1 + downWeight)
-    } else if (state === "gate") {                                       // click/tap the gate → enter the wormhole
-      paintDots(0); opts.navToSnap?.(GATE_SNAP + 1)
+    } else if (state === "gate") {                                       // click/tap the gate → Omnitrix activation → enter
+      activateGate()
     }
   }
   // touch: horizontal drag orbits; vertical swipes fall through to the page snap engine
@@ -598,8 +660,17 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     T = t
     px.x += (mtgt.x - px.x) * 0.05
     px.y += (mtgt.y - px.y) * 0.05
-    dashRing.rotation.z = t * 0.25
-    ticks.rotation.z = -t * 0.05
+    // counter-rotating rings (gears) — the dashed ring runs anticlockwise, the
+    // tick ring clockwise; activation spins both up hard
+    ringBoost *= 0.95
+    dashPhase += dt * (0.3 + ringBoost * 7)
+    tickPhase += dt * (0.16 + ringBoost * 5)
+    dashRing.rotation.z = dashPhase
+    ticks.rotation.z = -tickPhase
+    chevOff += (chevTarget - chevOff) * 0.16
+    chevL.position.x = -(0.14 + chevOff * 1.5)
+    chevR.position.x = (0.14 + chevOff * 1.5)
+    chevMat.opacity = clamp(0.55 + Math.sin(t * 2.1) * 0.15 + ringBoost * 0.5, 0, 1)
     reconcile()
 
     if (state === "gate") {
@@ -629,16 +700,32 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       } else if (p < 0.87 && curve) {
         if (!swappedIn) { swappedIn = true; if (tunnel) tunnel.visible = true; endSpark.visible = true; gate.visible = warpTarget === -1 }
         const fly = (p - 0.16) / 0.71
-        const u = clamp(Math.pow(fly, 1.38), 0, 0.999)
-        curve.getPointAt(u, camera.position)
-        curve.getPointAt(Math.min(0.999, u + 0.01), camAhead)
-        camera.lookAt(camAhead)
-        lastLook.copy(camAhead)
-        curve.getPointAt(0.999, endSpark.position)
-        const dE = camera.position.distanceTo(endSpark.position)
-        endSpark.material.opacity = clamp(1 - dE / 52, 0, 1)
-        endSpark.scale.setScalar(clamp(28 / Math.max(dE, 1), 1.5, 28))
-        canvas.style.filter = `blur(${(fly * fly * 5).toFixed(2)}px)`
+        if (warpTarget === -1) {
+          // REVERSE ride — being pulled back out: camera faces backward so the
+          // rings recede; launches fast, decelerates; blur clears along the way
+          const u = clamp(1 - Math.pow(1 - fly, 1.38), 0.001, 0.999)
+          curve.getPointAt(u, camera.position)
+          curve.getPointAt(Math.max(0.001, u - 0.01), camAhead)
+          camera.lookAt(camAhead)
+          lastLook.copy(camAhead)
+          curve.getPointAt(0.001, endSpark.position)              // the world you're leaving, shrinking away
+          const dE = camera.position.distanceTo(endSpark.position)
+          endSpark.material.opacity = clamp(1 - dE / 60, 0, 1)
+          endSpark.scale.setScalar(clamp(28 / Math.max(dE, 1), 1.2, 28))
+          canvas.style.filter = `blur(${(Math.pow(1 - fly, 1.6) * 5).toFixed(2)}px)`
+        } else {
+          // FORWARD ride — accelerating toward the point of light
+          const u = clamp(Math.pow(fly, 1.38), 0, 0.999)
+          curve.getPointAt(u, camera.position)
+          curve.getPointAt(Math.min(0.999, u + 0.01), camAhead)
+          camera.lookAt(camAhead)
+          lastLook.copy(camAhead)
+          curve.getPointAt(0.999, endSpark.position)
+          const dE = camera.position.distanceTo(endSpark.position)
+          endSpark.material.opacity = clamp(1 - dE / 52, 0, 1)
+          endSpark.scale.setScalar(clamp(28 / Math.max(dE, 1), 1.5, 28))
+          canvas.style.filter = `blur(${(fly * fly * 5).toFixed(2)}px)`
+        }
         warpLight.position.copy(camera.position)                       // metallic glints on the rings
         warpLight.intensity = 2.6
       } else {
@@ -708,6 +795,13 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       : ((state === "idle" || state === "gate") && ray.intersectObjects(weights.map((w) => w.spr)).length) ? "pointer"
         : state === "idle" ? "grab" : "default"
 
+    // the active project is HEAVIER — its well slowly deepens and the mass
+    // settles lower while you're parked with it (eases back on departure)
+    weights.forEach((w, i) => {
+      const tgt = i === focus && state === "idle" ? w.massBase * 1.6 : w.massBase
+      w.mass += (tgt - w.mass) * 0.035
+    })
+
     // fabric
     const arr = pos.array as Float32Array
     for (let k = 0; k < pos.count; k++) {
@@ -776,7 +870,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
         }
       } else {
         const pr = (t - mt.t0) / mt.dur
-        if (pr >= 1) { mt.active = false; mt.mat.opacity = 0; mt.nextAt = t + 3 + Math.random() * 7 }
+        if (pr >= 1) { mt.active = false; mt.mat.opacity = 0; mt.nextAt = t + 1.2 + Math.random() * 3.5 }
         else {
           mt.mat.opacity = Math.sin(pr * Math.PI) * 0.75
           const mp = mt.line.geometry.attributes.position as THREE.BufferAttribute
@@ -821,6 +915,8 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       const ch = container.clientHeight
       const cy = clamp(s.y, ch * 0.4, ch * 0.6)                        // card rides the middle of the screen
       if (railLabel) railLabel.style.opacity = gCard > 0.25 ? "0" : "1"  // rail label yields to the card
+      if (cornerTL) cornerTL.style.opacity = gCard.toFixed(2)
+      if (cornerTR) cornerTR.style.opacity = gCard.toFixed(2)
       proj.style.opacity = gCard.toFixed(3)
       proj.style.transform = `translate(${s.x}px, ${cy + (1 - gCard) * 30}px) translate(-50%,-50%) scale(${(0.9 + gCard * 0.1).toFixed(3)})`
       proj.style.pointerEvents = gCard > 0.6 ? "auto" : "none"
@@ -828,6 +924,8 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       spot.visible = false
       if (state !== "warp") proj.style.opacity = "0"
       proj.style.pointerEvents = "none"
+      if (cornerTL) cornerTL.style.opacity = "0"
+      if (cornerTR) cornerTR.style.opacity = "0"
     }
 
     renderer.render(scene, camera)
