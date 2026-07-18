@@ -180,6 +180,18 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", spaceGrotesk.variable, firaCode.variable, inter.variable, "font-sans")}
     >
       <body className="min-h-full flex flex-col">
+        {/* Dev-only: guard performance.measure against Next.js dev-overlay bug
+            vercel/next.js#86060 (negative-timestamp crash via not-found
+            instrumentation, still present in 16.2.10). Not rendered in prod.
+            Remove once the upstream fix ships. */}
+        {process.env.NODE_ENV === "development" && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html:
+                "(function(){var m=performance.measure.bind(performance);performance.measure=function(){try{return m.apply(null,arguments)}catch(e){}}})();",
+            }}
+          />
+        )}
         {/* JSON-LD structured data */}
         <script
           type="application/ld+json"

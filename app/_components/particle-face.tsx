@@ -40,7 +40,7 @@ function makeCircleTexture(size = 64): THREE.CanvasTexture {
 }
 
 // ── particle mesh ─────────────────────────────────────────────────────────────
-function FaceParticles() {
+function FaceParticles({ onReady }: { onReady?: () => void }) {
   const ref    = useRef<THREE.Points>(null)
   const timer  = useRef(new THREE.Timer())
   const formT0 = useRef<number | null>(null)
@@ -121,6 +121,7 @@ function FaceParticles() {
         posAttr.needsUpdate = true
         colAttr.needsUpdate = true
         ready.current = true
+        onReady?.()                       // particles are in — the loader can hand off to the fly-in
       })
 
     const canvas = gl.domElement
@@ -225,7 +226,7 @@ function FaceParticles() {
 }
 
 // ── canvas export ─────────────────────────────────────────────────────────────
-export function ParticleFace() {
+export function ParticleFace({ onReady }: { onReady?: () => void }) {
   return (
     <Canvas
       camera={{ position: [0, 0, 2], fov: 55 }}
@@ -233,7 +234,7 @@ export function ParticleFace() {
       dpr={[1, 2]}
       style={{ width: "100%", height: "100%" }}
     >
-      <FaceParticles />
+      <FaceParticles onReady={onReady} />
     </Canvas>
   )
 }

@@ -368,7 +368,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   home.style.cssText = isMobile
     ? "width:20px;height:20px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#9fb0c8;cursor:pointer;font-size:10px;line-height:1;margin-bottom:2px;transition:border-color .2s,color .2s;"
     : "width:28px;height:28px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#9fb0c8;cursor:pointer;font-size:13px;line-height:1;flex-shrink:0;transition:border-color .2s,color .2s;"
-  home.onclick = () => opts.navToSnap?.(GATE_SNAP)
+  home.onclick = () => { paintDots(-1); opts.navToSnap?.(GATE_SNAP) }   // nav acknowledges instantly
   addHudTip(home, "#8bf0ff", "⌂ · Gateway")
   home.addEventListener("pointerenter", () => { home.style.borderColor = "#8bf0ff"; home.style.color = "#8bf0ff" })
   home.addEventListener("pointerleave", () => { home.style.borderColor = "rgba(255,255,255,.25)"; home.style.color = "#9fb0c8" })
@@ -385,7 +385,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     const col = WEIGHT_COLORS[i]
     const b = document.createElement("button")
     b.setAttribute("aria-label", DEMO_CARDS[i].title)
-    b.onclick = () => opts.navToSnap?.(GATE_SNAP + 1 + i)
+    b.onclick = () => { paintDots(i); opts.navToSnap?.(GATE_SNAP + 1 + i) }   // nav acknowledges instantly
     if (isMobile) {
       // M4 — edge-rail dot
       b.style.cssText = "width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:transparent;cursor:pointer;padding:0;transition:all .3s;"
@@ -472,6 +472,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   function warpTo(tf: number) {
     if (state === "warp") return
     warpTarget = tf; state = "warp"; warpT = 0; swappedIn = false; swappedOut = false; yaw = 0; pitch = 0
+    paintDots(tf === -1 ? -1 : tf)                           // nav leads, the camera follows
     warpDur = 4.2 + Math.random() * 1.4
     const c = tf === -1 ? new THREE.Color("#8bf0ff") : weights[tf].col.clone()
     endSpark.material.color.copy(c).lerp(WHITE, 0.5)
@@ -487,6 +488,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     if (state === "idle" && tf === focus) return
     const retarget = state === "fly"                          // redirect mid-flight from wherever we are
     flyTarget = tf; state = "fly"; flyT = 0; yaw = 0; pitch = 0
+    paintDots(tf)                                             // nav leads, the camera follows
     flyFrom.copy(camera.position); flyToV.copy(vantage(tf))
     lookFrom.copy(retarget ? lastLook : wWorld(focus)); lookTo.copy(wWorld(tf))
     flyDur = clamp(2.2 + flyFrom.distanceTo(flyToV) * 0.028, 2.5, 3.9)
@@ -592,8 +594,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
       camera.lookAt(gatePos.x, gatePos.y - 0.6, gatePos.z - 8)
       intro.style.opacity = "1"; guide.style.opacity = "1"
       hint.style.opacity = hintSuppressed ? "0" : "0.9"; hint.textContent = "Scroll to enter ↓"
-      if (activeDot !== -1) paintDots(-1)
-      warpLight.intensity = 0
+      warpLight.intensity = 0                                 // (dots painted at travel start — no per-frame reset)
     } else if (state === "warp") {
       warpT += dt
       const p = clamp(warpT / warpDur, 0, 1)
