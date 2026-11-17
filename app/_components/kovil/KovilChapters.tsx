@@ -67,38 +67,33 @@ export function KovilChapters({ onPhoto }: { onPhoto: (i: number) => void }) {
       {/* ── Visual — changes with the card ─────────────────────────────────── */}
       <div style={{ position: "relative", flex: "1 1 0", minHeight: 0, overflow: "hidden", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
 
-        {/* 0 · Intro — two photos stacked, with a pin + callout */}
+        {/* 0 · Intro — two photos stacked top and bottom, labelled Live / Mixed Reality */}
         <div style={layer(0)} aria-hidden={idx !== 0}>
           <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 90% 70% at 50% 40%, rgba(20,24,58,0.35) 0%, rgba(7,7,15,0.15) 75%)" }} />
-          <div style={{
-            position: "absolute", left: "6%", top: "31%", width: "74%", aspectRatio: "16 / 10",
-            transform: "rotate(-5deg)", borderRadius: 12, overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.18)", boxShadow: "0 24px 48px -16px #000",
-          }}>
-            <Image src={SRC.aerial} alt="Moovar Kovil — aerial view" fill sizes="70vw" style={{ objectFit: "cover" }} priority />
-          </div>
-          <div style={{
-            position: "absolute", right: "5%", top: "52%", width: "66%", aspectRatio: "16 / 10",
-            transform: "rotate(4deg)", borderRadius: 12, overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.22)", boxShadow: "0 28px 56px -14px #000",
-          }}>
-            <Image src={SRC.models} alt="HoloLens 2 demo at Moovar Kovil" fill sizes="62vw" style={{ objectFit: "cover" }} priority />
-          </div>
-          {/* pin on the aerial photo */}
-          <span aria-hidden style={{
-            position: "absolute", left: "41%", top: "45%", width: 30, height: 30, marginLeft: -15, marginTop: -15, borderRadius: "50%",
-            background: "#22e5f0", color: "#04141a", display: "grid", placeItems: "center", fontFamily: MONO, fontSize: 13, fontWeight: 700,
-            boxShadow: "0 0 0 6px rgba(34,229,240,0.25)",
-          }}>1</span>
-          <div style={{
-            position: "absolute", left: 14, right: 14, top: "calc(10px + env(safe-area-inset-top, 0px))", padding: "10px 12px",
-            background: "rgba(10,11,24,0.9)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, backdropFilter: "blur(6px)",
-          }}>
-            <span style={{ ...kicker, fontSize: 11 }}>01 · Moovar Kovil</span>
-            <p style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 600, color: "#fff", margin: "4px 0 0", lineHeight: 1.3 }}>
-              A 9th-century Chola temple complex in Tamil Nadu, rebuilt for the HoloLens&nbsp;2.
-            </p>
-          </div>
+          {[
+            { src: SRC.aerial, alt: "Moovar Kovil — aerial view",       top: "calc(env(safe-area-inset-top, 0px) + 14px)", label: "Live",          live: true  },
+            { src: SRC.models, alt: "HoloLens 2 demo at Moovar Kovil",  top: "calc(50% + 6px)",                              label: "Mixed Reality", live: false },
+          ].map(ph => (
+            <div key={ph.label} style={{
+              position: "absolute", left: 16, right: 16, top: ph.top, height: "calc(50% - 20px - env(safe-area-inset-top, 0px) / 2)",
+              borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.16)", boxShadow: "0 22px 44px -18px #000",
+            }}>
+              <Image src={ph.src} alt={ph.alt} fill sizes="100vw" style={{ objectFit: "cover" }} priority />
+              <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(7,7,15,0.5) 0%, rgba(7,7,15,0) 40%)" }} />
+              <span style={{
+                position: "absolute", left: 12, top: 12, display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "6px 12px", borderRadius: 999, background: "rgba(7,7,15,0.62)", border: "1px solid rgba(34,229,240,0.45)",
+                backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+                fontFamily: MONO, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "#fff",
+              }}>
+                {ph.live
+                  ? <i aria-hidden className="kv-live" style={{ width: 8, height: 8, borderRadius: "50%", background: "#22e5f0", display: "inline-block" }} />
+                  : <svg width="14" height="10" viewBox="0 0 14 10" fill="none" stroke="#22e5f0" strokeWidth="1.5" aria-hidden><rect x="0.75" y="1.5" width="12.5" height="6" rx="2.5" /><path d="M4 9h6" strokeLinecap="round" /></svg>}
+                {ph.label}
+              </span>
+            </div>
+          ))}
+          <style>{`@keyframes kv-livepulse { 0% { box-shadow: 0 0 0 0 rgba(34,229,240,.6) } 100% { box-shadow: 0 0 0 9px rgba(34,229,240,0) } } .kv-live { animation: kv-livepulse 1.6s ease-out infinite } @media (prefers-reduced-motion: reduce) { .kv-live { animation: none } }`}</style>
         </div>
 
         {/* 1 · The scan — opens the 3D explorer */}

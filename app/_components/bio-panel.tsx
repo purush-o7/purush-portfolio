@@ -1,3 +1,5 @@
+import { HeroStatus } from "./hero-status"
+
 export function BioPanel() {
   return (
     <div className="flex flex-col justify-center h-full px-6 py-8 md:px-10 md:py-16 gap-4 md:gap-8">
@@ -28,6 +30,9 @@ export function BioPanel() {
       <p className="text-base md:text-lg leading-7 md:leading-8 text-white/55 max-w-[26ch]">
         CS engineer turning complex systems into elegant, purposeful software.
       </p>
+
+      {/* availability · base · links */}
+      <HeroStatus />
     </div>
   )
 }

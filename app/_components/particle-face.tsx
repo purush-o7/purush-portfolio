@@ -9,16 +9,17 @@ const N         = 7000   // must match --count in generate_particles.py
 const FORM_DUR  = 2.6    // fly-in duration (s)
 const SPRING_K  = 0.048
 const DAMPING   = 0.80
-const REPEL_R   = 0.20
-const REPEL_F   = 0.07
+const REPEL_R   = 0.18
+const REPEL_F   = 0.06
 // Traveling wave along stroke direction
 const WAVE_SPEED = 1.1   // temporal frequency (rad/s)
 const WAVE_K     = 9.0   // spatial frequency
 const WAVE_AMP   = 0.014 // max wave displacement (scene units)
-// Color temperature
-const WARM_R   = 0.40            // radius of colour glow (scene units)
-const WARM_STR = 0.88            // max blend at centre
-const WARM_RGB = [1.0, 0.52, 0.14] as const  // amber
+// Cursor light — dots under the cursor take the site's cyan accent; the rest dims a touch
+const WARM_R   = 0.32            // radius of the light (scene units)
+const WARM_STR = 0.92            // max blend at centre
+const WARM_RGB = [0.13, 0.90, 0.94] as const  // cyan accent
+const DIM      = 0.80            // brightness of dots far from the cursor
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
@@ -210,11 +211,14 @@ function FaceParticles({ onReady }: { onReady?: () => void }) {
         pos[i3 + 1] += v[i3 + 1]
         pos[i3 + 2] += v[i3 + 2]
 
-        // Colour temperature: blend toward warm amber as cursor approaches
-        const warmF  = d < WARM_R ? Math.pow(1 - d / WARM_R, 1.5) * WARM_STR : 0
-        col[i3]     = oc[i3]     + (WARM_RGB[0] - oc[i3])     * warmF
-        col[i3 + 1] = oc[i3 + 1] + (WARM_RGB[1] - oc[i3 + 1]) * warmF
-        col[i3 + 2] = oc[i3 + 2] + (WARM_RGB[2] - oc[i3 + 2]) * warmF
+        // Cursor light: dim at rest, brighten and tint toward the accent as the cursor approaches
+        const near   = d < WARM_R ? (1 - d / WARM_R) : 0
+        const warmF  = near * WARM_STR
+        const lit    = DIM + (1 - DIM) * near
+        const br = oc[i3] * lit, bg = oc[i3 + 1] * lit, bb = oc[i3 + 2] * lit
+        col[i3]     = br + (WARM_RGB[0] - br) * warmF
+        col[i3 + 1] = bg + (WARM_RGB[1] - bg) * warmF
+        col[i3 + 2] = bb + (WARM_RGB[2] - bb) * warmF
       }
     }
 

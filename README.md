@@ -95,6 +95,9 @@ app/
 
 - Adding new scrollable content inside a section? Put `data-scroll-passthrough` on the container. The snap hook handles the boundary handoff automatically.
 - All sections are `position: fixed`, layered by z-index, and slide via `translateY` driven by `window.scrollY`. The "page" is just spacer divs — total height = `SECTIONS × 100vh`.
+- **Skills window:** the desktop Skills section is a VS Code window — title bar, activity bar, minimap and status bar use the real VS Code icons (`@vscode/codicons`, wrapped by `skills/Codicon.tsx`); the chat is set in the sans font for readability. The phone layout is unchanged.
+- **Free-scroll stage:** the Experience roles (snaps 5–9) scroll natively instead of stepping — `FREE_FROM/FREE_TO` in `use-scroll-snap.ts`. A gesture that starts inside the stage stays free and is clamped at the edges; the next gesture at an edge hands back to the snap engine. `use-exp-progress.ts` smooths the role position so it glides.
+- **Phone role sheet:** `RoleSheet` is the shadcn `Drawer` (vaul, `components/ui/drawer.tsx`) with 60% / full snap points; `noBodyStyles` keeps vaul from fixing the body (which would reset `scrollY`).
 - **Returning from `/kovil-lens`:** the Explore buttons write `snap:restore=3` to `sessionStorage`; `use-scroll-snap.ts` reads it on mount, scrolls to that snap and syncs the engine, so Back lands on the KovilLens section.
 - The Skills section animations reset only on upward scroll toward KovilLens, not when arriving from Experience. Intentional — you shouldn't have to re-watch an animation just because you scrolled up one section and back down.
 - `ssr: false` on all Three.js components. Non-negotiable. Don't remove it and then file an issue.

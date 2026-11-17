@@ -117,7 +117,6 @@ export function ChatPanel({ active, clearTrigger = 0, onClear, compact = false }
   }
 
   const remaining = CHAT_OPTIONS.filter(o => !usedIds.has(o.id))
-  const fs   = compact ? 10 : 11
   const bpad = compact ? "7px 10px" : "9px 13px"
 
   return (
@@ -143,10 +142,10 @@ export function ChatPanel({ active, clearTrigger = 0, onClear, compact = false }
           <ClaudeIcon size={compact ? 13 : 15} />
         </motion.div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: MONO, fontSize: compact ? 10 : 11, color: "rgba(255,255,255,0.8)", letterSpacing: "0.05em" }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: compact ? 12 : 14, fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>
             claude-agent
           </div>
-          <div style={{ fontFamily: MONO, fontSize: 9, color: ACCENT, opacity: 0.55, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: ACCENT, opacity: 0.7, letterSpacing: "0.12em", textTransform: "uppercase" }}>
             Skills Analyst · Online
           </div>
         </div>
@@ -158,7 +157,7 @@ export function ChatPanel({ active, clearTrigger = 0, onClear, compact = false }
             style={{
               display: "flex", alignItems: "center", gap: 4,
               padding: "4px 10px",
-              fontFamily: MONO, fontSize: 9,
+              fontFamily: MONO, fontSize: 10,
               letterSpacing: "0.1em", textTransform: "uppercase",
               color: "rgba(255,255,255,0.22)",
               background: "rgba(255,255,255,0.03)",
@@ -215,9 +214,9 @@ export function ChatPanel({ active, clearTrigger = 0, onClear, compact = false }
                   border: msg.role === "user" ? "1px solid rgba(167,139,250,0.28)" : "1px solid rgba(255,255,255,0.08)",
                   borderRadius: msg.role === "user" ? "10px 4px 10px 10px" : "4px 10px 10px 10px",
                   padding: bpad,
-                  fontFamily: MONO, fontSize: fs,
-                  color: msg.role === "user" ? "rgba(167,139,250,0.9)" : "rgba(255,255,255,0.72)",
-                  lineHeight: 1.75, letterSpacing: "0.02em", whiteSpace: "pre-wrap",
+                  fontFamily: "var(--font-sans)", fontSize: compact ? 13 : 14.5,
+                  color: msg.role === "user" ? "rgba(196,181,253,0.95)" : "rgba(255,255,255,0.86)",
+                  lineHeight: 1.6, letterSpacing: "0", whiteSpace: "pre-wrap",
                 }}
               >
                 {msg.text}
@@ -289,8 +288,8 @@ export function ChatPanel({ active, clearTrigger = 0, onClear, compact = false }
                   whileTap={!isTyping   ? { scale: 0.93 } : {}}
                   onClick={() => handleOption(opt.id, opt.question, opt.answer)}
                   style={{
-                    fontFamily: MONO, fontSize: compact ? 9 : 10,
-                    letterSpacing: "0.04em", color: "rgba(167,139,250,0.9)",
+                    fontFamily: "var(--font-sans)", fontSize: compact ? 12 : 13,
+                    letterSpacing: "0", color: "rgba(196,181,253,0.95)",
                     background: "rgba(167,139,250,0.07)",
                     border: "1px solid rgba(167,139,250,0.25)",
                     borderRadius: 20,

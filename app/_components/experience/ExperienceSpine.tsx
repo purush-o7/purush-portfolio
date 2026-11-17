@@ -7,8 +7,8 @@ import { RoleSheet }          from "./RoleSheet"
 import { startYear, useExpProgress } from "./use-exp-progress"
 
 const N       = ALL_ENTRIES.length
-const CARD_H  = 132   // card height, px
-const PITCH   = 150   // distance between card tops, px
+const CARD_H  = 150   // card height, px
+const PITCH   = 170   // distance between card tops, px
 const SPINE_X = 22    // spine line x, px
 const NODE_Y  = 24    // node centre inside a card, px
 
@@ -25,12 +25,13 @@ export function ExperienceSpine() {
   const [open,   setOpen]   = useState<number | null>(null)
 
   useExpProgress(cp => {
-    if (stripRef.current) stripRef.current.style.transform = `translateY(calc(27vh - ${cp * PITCH}px))`
+    if (stripRef.current) stripRef.current.style.transform = `translateY(calc(24vh - ${cp * PITCH}px))`
     if (fillRef.current)  fillRef.current.style.height     = `${cp * PITCH}px`
     cardRefs.current.forEach((el, i) => {
       if (!el) return
       const d = i - cp
-      el.style.opacity = String(d < 0 ? Math.max(0, 1 + d * 0.85) : Math.max(0.5, 1 - d * 0.2))
+      el.style.opacity   = String(d < 0 ? Math.max(0, 1 + d * 0.85) : Math.max(0.55, 1 - d * 0.18))
+      el.style.transform = `scale(${1 - Math.min(1, Math.abs(d)) * 0.035})`
     })
     nodeRefs.current.forEach((el, i) => {
       if (!el) return
@@ -98,14 +99,14 @@ export function ExperienceSpine() {
               style={{
                 all: "unset", boxSizing: "border-box", cursor: "pointer",
                 position: "absolute", left: 46, right: 16, top: 0, height: CARD_H,
-                padding: "12px 14px", overflow: "hidden",
+                padding: "14px 16px", overflow: "hidden", transformOrigin: "left center", willChange: "transform, opacity",
                 display: "flex", flexDirection: "column", gap: 4,
                 background: "rgba(14,16,34,0.82)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12,
               }}
             >
               <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", color: e.accent }}>{e.period}</span>
-              <span style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 600, color: "#fff", lineHeight: 1.2 }}>{e.role}</span>
-              <span style={{ fontFamily: MONO, fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4 }}>{e.org}</span>
+              <span style={{ fontFamily: "var(--font-heading)", fontSize: 18, fontWeight: 600, color: "#fff", lineHeight: 1.2 }}>{e.role}</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.4 }}>{e.org}</span>
               <span style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: "auto", overflow: "hidden", maxHeight: 22 }}>
                 {(e.metrics
                   ? e.metrics.slice(0, 3).map(m => `${m.value} ${m.label}`)

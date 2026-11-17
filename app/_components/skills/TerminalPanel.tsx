@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState }  from "react"
 import { TriangleAlert, Info, CircleX } from "lucide-react"
 import { TERMINAL_LINES, OUTPUT_LINES, PROBLEM_LINES } from "./data"
+import { Codicon }                   from "./Codicon"
 
 const MONO       = "var(--font-geist-mono)"
 const LINE_DELAY = 170
@@ -76,8 +77,8 @@ export function TerminalPanel({ active, onComplete, compact = false }: Props) {
     return () => clearInterval(id)
   }, [active])
 
-  const fs = compact ? 10 : 12
-  const lh = compact ? "17px" : "20px"
+  const fs = compact ? 10 : 13
+  const lh = compact ? "17px" : "23px"
 
   return (
     <div style={{ height: "100%", background: "#040410", display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -99,7 +100,7 @@ export function TerminalPanel({ active, onComplete, compact = false }: Props) {
               style={{
                 display: "flex", alignItems: "center", gap: compact ? 5 : 6,
                 padding: compact ? "0 10px" : "0 14px",
-                fontFamily: MONO, fontSize: compact ? 9 : 10,
+                fontFamily: MONO, fontSize: compact ? 9 : 11,
                 letterSpacing: "0.08em",
                 color:        isActive ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.22)",
                 background:   "transparent",
@@ -117,11 +118,13 @@ export function TerminalPanel({ active, onComplete, compact = false }: Props) {
         })}
 
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", paddingRight: compact ? 8 : 12, gap: compact ? 8 : 10 }}>
-          {["+", "⊟", "×"].map(icon => (
-            <span key={icon} style={{ fontFamily: MONO, fontSize: compact ? 11 : 13, color: "rgba(255,255,255,0.15)", cursor: "default", lineHeight: 1 }}>
-              {icon}
-            </span>
-          ))}
+          {compact
+            ? ["+", "⊟", "×"].map(icon => (
+                <span key={icon} style={{ fontFamily: MONO, fontSize: 11, color: "rgba(255,255,255,0.15)", cursor: "default", lineHeight: 1 }}>{icon}</span>
+              ))
+            : ["add", "split-horizontal", "trash", "chevron-up", "close"].map(n => (
+                <Codicon key={n} name={n} size={15} color="rgba(255,255,255,0.3)" />
+              ))}
         </div>
       </div>
 

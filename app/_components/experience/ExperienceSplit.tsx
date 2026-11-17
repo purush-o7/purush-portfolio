@@ -14,14 +14,18 @@ const N = ALL_ENTRIES.length
  * pages that slides with the page snaps; each page scrolls its own content.
  */
 export function ExperienceSplit() {
-  const stripRef  = useRef<HTMLDivElement>(null)
   const pageRefs  = useRef<(HTMLDivElement | null)[]>([])
   const [active, setActive] = useState(0)
 
   useExpProgress(cp => {
-    if (stripRef.current) stripRef.current.style.transform = `translateY(${(-cp / N) * 100}%)`
+    // Roles crossfade in place with a small slide — no empty stretch between them while scrolling.
     pageRefs.current.forEach((el, i) => {
-      if (el) el.style.opacity = String(Math.max(0, Math.min(1, 1 - Math.abs(i - cp) * 1.25)))
+      if (!el) return
+      const d = i - cp
+      const o = Math.max(0, Math.min(1, 1 - (Math.abs(d) - 0.12) * 2.6))   // near-complete at rest, almost no overlap mid-change
+      el.style.opacity       = String(o)
+      el.style.transform     = `translateY(${d * 72}px)`
+      el.style.pointerEvents = o > 0.5 ? "auto" : "none"
     })
     setActive(Math.round(cp))
   })
@@ -95,16 +99,12 @@ export function ExperienceSplit() {
 
       {/* ── Right: role pages ──────────────────────────────────────────────── */}
       <div style={{ flex: 1, minWidth: 0, position: "relative", overflow: "hidden" }}>
-        <div
-          ref={stripRef}
-          style={{ position: "absolute", left: 0, right: 0, top: 0, height: `${N * 100}%`, willChange: "transform" }}
-        >
           {ALL_ENTRIES.map((e, i) => (
             <div
               key={i}
               ref={el => { pageRefs.current[i] = el }}
               style={{
-                position: "absolute", left: 0, right: 0, top: `${(i / N) * 100}%`, height: `${100 / N}%`,
+                position: "absolute", inset: 0, willChange: "transform, opacity",
                 display: "flex", flexDirection: "column", justifyContent: "center",
                 padding: "clamp(20px, 4.4vh, 40px) 72px clamp(20px, 4.4vh, 40px) 64px", opacity: i === 0 ? 1 : 0,
               }}
@@ -130,17 +130,15 @@ export function ExperienceSplit() {
               </header>
 
               <div
-                data-scroll-passthrough
                 style={{
-                  flex: "0 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain",
+                  flex: "0 1 auto", minHeight: 0, overflowY: "auto",
                   paddingBottom: 8, scrollbarWidth: "none",
-                                  }}
+                }}
               >
                 <RoleContent entry={e} />
               </div>
             </div>
           ))}
-        </div>
       </div>
     </div>
   )
