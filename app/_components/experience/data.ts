@@ -5,6 +5,9 @@ export interface Section {
 
 export interface ExperienceEntry {
   role:      string
+  short:     string
+  /** The few points that matter most — shown in the UI. Full detail stays in `sections`. */
+  highlights: string[]
   org:       string
   period:    string
   duration:  string
@@ -21,18 +24,26 @@ export interface ExperienceEntry {
 export const ALL_ENTRIES: ExperienceEntry[] = [
   {
     role:     "Associate Software Engineer",
+    short:    "Software Engineer",
+    highlights: [
+      "Architected and built a **multi-tenant CRM** end-to-end and led a **5-person team** for U.S. fleet dealerships",
+      "Integrated **Jupico** payments across the multi-tenant system using its **merchant and submerchant** model, so each tenant's payments run under its own submerchant",
+      "Built async pipelines on **RabbitMQ + Dramatiq** — bulk import, campaigns and workflows run **fully async**",
+      "Shipped a **24/7 conversational AI bot** and a **bulk-calling system** for dealer agents",
+      "Replaced **four separate tools** with one portal, deployed with **zero downtime** on Docker + AWS",
+    ],
     org:      "MaTrack Inc. (Sieva Networks)",
     period:   "Mar 2024 – Jan 2026",
     duration: "1 yr 11 mo",
     location: "San Francisco · Remote",
     tag:      "Enterprise SaaS",
     accent:   "#00FFFF",
-    tech:     ["FastAPI", "PHP", "JavaScript", "RabbitMQ", "Dramatiq", "Twilio", "SendGrid", "Jupico", "Zoho", "Docker", "Apache", "AWS"],
+    tech:     ["FastAPI", "RabbitMQ", "Dramatiq", "Jupico", "Twilio", "SendGrid", "PHP", "JavaScript", "Zoho", "Docker", "Apache", "AWS"],
     sections: [
       {
         heading: "System Design & Leadership",
         points: [
-          "Architected a **multi-tenant CRM** end-to-end — led system design, frontend decisions, and a **5-person team** across deployments for U.S. fleet dealerships",
+          "Architected and built a **multi-tenant CRM** end-to-end — led system design, frontend decisions, and a **5-person team** across deployments for U.S. fleet dealerships",
           "Designed **per-tenant data isolation**: each company gets its own customer base, agent roster, contract ledger, and comms history on shared infrastructure with independent scaling",
         ],
       },
@@ -50,7 +61,7 @@ export const ALL_ENTRIES: ExperienceEntry[] = [
         points: [
           "Built a **sequential bulk calling system** eliminating manual dial friction for dealer agents — staff can run outreach campaigns at scale with one click",
           "Engineered a **conversational AI bot** enabling **24/7** customer coverage — handles inbound queries, follow-ups, and escalations without human intervention",
-          "Delivered end-to-end payment integration with **Twilio**, **SendGrid**, and **Jupico** — automated voice follow-ups, installment tracking, and real-time sync",
+          "Delivered end-to-end payment integration with **Twilio**, **SendGrid**, and **Jupico** — using Jupico's **merchant and submerchant** model for the multi-tenant system, with automated voice follow-ups, installment tracking, and real-time sync",
           "Built **custom Claude plugins** and automation integrations directly into the codebase — streamlined internal engineering workflows",
         ],
       },
@@ -71,6 +82,12 @@ export const ALL_ENTRIES: ExperienceEntry[] = [
 
   {
     role:     "Teaching Assistant",
+    short:    "Teaching Assistant",
+    highlights: [
+      "Supported **Python and DSA** courses — lectures, labs and grading",
+      "Ran **weekly one-on-one mentoring** for students who needed extra help",
+      "Awarded **Green++**, the highest student performance grade at Amrita School of Computing",
+    ],
     org:      "Amrita School of Computing",
     period:   "Nov 2023 – Mar 2024",
     duration: "5 mo",
@@ -105,6 +122,12 @@ export const ALL_ENTRIES: ExperienceEntry[] = [
 
   {
     role:     "Software Developer Intern",
+    short:    "Developer Intern",
+    highlights: [
+      "Built a **neonatal care app** for Amrita Hospital (Kochi) on **Frappe**, replacing manual documentation",
+      "Fine-tuned **Llama-2-7B** on ~3,000 neonatal attributes for **natural-language-to-SQL** queries",
+      "Added **similarity-based patient clustering** to surface infants with matching disease traits",
+    ],
     org:      "ICTS, Amrita School of Computing",
     period:   "Dec 2022 – May 2023",
     duration: "6 mo",
@@ -144,6 +167,12 @@ export const ALL_ENTRIES: ExperienceEntry[] = [
 
   {
     role:     "University Research Assistant",
+    short:    "Research Assistant",
+    highlights: [
+      "Took the **KovilLens** HoloLens 2 app from **~15 fps to a stable 60 fps** with scene optimisation and baked lighting",
+      "Learned **Unity, C# and MRTK** from scratch for 3D spatial mapping and real-world alignment",
+      "Contributed to a **peer-reviewed paper** accepted at **ICVR 2025** (Wageningen, NL)",
+    ],
     org:      "Amrita Centre for Wireless Networks & Applications",
     period:   "Feb – May 2023",
     duration: "4 mo",
@@ -181,6 +210,13 @@ export const ALL_ENTRIES: ExperienceEntry[] = [
 
   {
     role:     "Cloud Computing Intern",
+    short:    "Cloud Intern",
+    highlights: [
+      "Built **talkToLocals**, a cloud-native platform connecting travellers with local guides",
+      "Django on **Azure App Services**, React frontend, **Azure SQL**, and **Azure Functions** for async tasks",
+      "**Azure ML** guide matching lifted communication efficiency by **+30%**",
+      "Completed the Microsoft Azure Apprenticeship with **187 badges** and **39 trophies**",
+    ],
     org:      "FutureSkills Prime · Microsoft Azure Apprenticeship",
     period:   "Mar – Jun 2022",
     duration: "4 mo",

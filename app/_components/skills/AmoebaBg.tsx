@@ -82,12 +82,12 @@ export function AmoebaBg() {
       el!.style.transform = `translate(${Math.round(curX)}px, ${Math.round(curY)}px)`
       raf = requestAnimationFrame(move)
     }
-    function onMouse(e: MouseEvent) { tgX = e.clientX; tgY = e.clientY }
+    function onMouse(e: PointerEvent) { tgX = e.clientX; tgY = e.clientY }
 
-    window.addEventListener("mousemove", onMouse)
+    window.addEventListener("pointermove", onMouse, { passive: true })
     move()
     return () => {
-      window.removeEventListener("mousemove", onMouse)
+      window.removeEventListener("pointermove", onMouse)
       cancelAnimationFrame(raf)
     }
   }, [])

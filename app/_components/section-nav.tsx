@@ -5,7 +5,7 @@ import { trackNavArrow }   from "../_lib/analytics"
 
 export function SectionNav() {
   return (
-    <div style={{
+    <div data-section-nav style={{
       position:   "fixed",
       bottom:     32,
       right:      28,

@@ -10,7 +10,7 @@ const WHEELEND_MS    = 200   // idle window after momentum before unlock
 const DELTA_MIN      = 10    // minimum |deltaY| for intentional wheel tick
 const TOUCH_MIN      = 35    // px — distance threshold (slow deliberate drag)
 const VEL_SNAP       = 0.3   // px/ms — velocity threshold (quick flick)
-const OVERSCROLL_PX  = 80    // px of over-scroll at boundary before handing off to snap
+const WHEEL_GAP_MS   = 220   // wheel silence that separates one gesture from the next
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
@@ -29,13 +29,26 @@ export function useScrollSnap(sections: number) {
   const touchStartY   = useRef(0)
   const touchStartT   = useRef(0)
   const rafRef        = useRef<number | null>(null)
-  // Accumulated overscroll px per passthrough element.
-  // Resets when element has room to scroll again.
-  const ptOverscroll = useRef(new WeakMap<HTMLElement, number>())
+  // Wheel gestures are segmented by silence (WHEEL_GAP_MS) or a direction flip.
+  // A gesture that STARTS mid-content only ever scrolls the content to its end;
+  // only a gesture that STARTS with the content already ended changes section —
+  // mirroring the touch behaviour below.
+  const wheelLastT       = useRef(0)      // timestamp of the previous wheel event
+  const wheelDir         = useRef(0)      // direction of the current wheel gesture
+  const wheelAtBoundary  = useRef(false)  // was the passthrough already ended at gesture start?
   // Touch: was the passthrough at boundary in the swipe direction when gesture started?
   const ptAtBoundaryOnTouchStart = useRef(false)
 
   useEffect(() => {
+    // Coming back from a full-page route (e.g. the 3D explorer): land on the snap we left from.
+    try {
+      const restore = sessionStorage.getItem("snap:restore")
+      if (restore !== null) {
+        sessionStorage.removeItem("snap:restore")
+        const idx = Number(restore)
+        if (Number.isFinite(idx)) window.scrollTo(0, Math.max(0, Math.min(idx, sections - 1)) * window.innerHeight)
+      }
+    } catch { /* storage unavailable */ }
     current.current = Math.round(window.scrollY / window.innerHeight)
 
     function animateScroll(
@@ -107,27 +120,27 @@ export function useScrollSnap(sections: number) {
       e.preventDefault()
       if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
 
-      // Passthrough scroll chaining — overscroll accumulator:
-      // • Has room → scroll element, reset accumulator to 0
-      // • At boundary → accumulate |deltaY|; once total ≥ OVERSCROLL_PX, hand off to snap
-      // No timers — purely distance-based so it works on both trackpad and mouse wheel.
+      // Passthrough scroll chaining — gesture-scoped, like touch:
+      // • Gesture started with room → scroll the content, and when it hits the
+      //   end, ABSORB the rest of the gesture (incl. trackpad momentum tail).
+      // • Gesture started with the content already ended → hand off to snap.
+      // A "gesture" ends after WHEEL_GAP_MS of silence or a direction flip.
       const pt = getPassthrough(e.target)
       if (pt) {
-        if (canScroll(pt, e.deltaY > 0)) {
+        const now = performance.now()
+        const dir = e.deltaY > 0 ? 1 : -1
+        const isNewGesture = now - wheelLastT.current > WHEEL_GAP_MS || dir !== wheelDir.current
+        wheelLastT.current = now
+        wheelDir.current   = dir
+        if (isNewGesture) wheelAtBoundary.current = !canScroll(pt, dir > 0)
+
+        if (canScroll(pt, dir > 0)) {
           pt.scrollTop += e.deltaY
-          ptOverscroll.current.set(pt, 0)   // reset — element has room
           return
         }
-
-        // At boundary — accumulate overscroll
-        const prev  = ptOverscroll.current.get(pt) ?? 0
-        const total = prev + Math.abs(e.deltaY)
-        ptOverscroll.current.set(pt, total)
-
-        if (total < OVERSCROLL_PX) return   // still absorbing, not enough yet
-
-        // Threshold crossed — hand off and reset
-        ptOverscroll.current.set(pt, 0)
+        // Content ended. If this gesture began mid-content, it stops here —
+        // the user lifts / pauses, and the NEXT gesture changes section.
+        if (!wheelAtBoundary.current) return
         // fall through to snap logic
       }
 

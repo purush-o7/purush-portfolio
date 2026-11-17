@@ -339,7 +339,7 @@ useGLTF.preload("/models/person_with_hololens.glb")
 
 
 // ── Main export ────────────────────────────────────────────────────────────────
-export function TempleViewer() {
+export function TempleViewer({ standalone = false }: { standalone?: boolean } = {}) {
   // Groups
   const templeGroupRef = useRef<THREE.Group>(null)
   const worldGroupRef  = useRef<THREE.Group>(null)
@@ -377,21 +377,22 @@ export function TempleViewer() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   // 3D controls stay locked behind an explicit "tap to explore" mask — until
   // then every gesture (scroll, swipe) belongs to the page, not the temple.
-  const [armed, setArmed] = useState(false)
+  const [armed, setArmed] = useState(standalone)
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setIsFullscreen(false); setArmed(false) } }
+    // Standalone (its own page): always armed, never tied to a page scroll position.
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setIsFullscreen(false); if (!standalone) setArmed(false) } }
     // Auto-exit 3D when the user scrolls to another section (KovilLens sits at
     // snap 3 of the page scroll budget — see page.tsx). Half a viewport away = gone.
     const onScroll = () => {
       if (Math.abs(window.scrollY - 3 * window.innerHeight) > window.innerHeight * 0.5) setArmed(false)
     }
-    window.addEventListener("scroll", onScroll, { passive: true })
+    if (!standalone) window.addEventListener("scroll", onScroll, { passive: true })
     window.addEventListener("keydown", onKey)
     return () => {
       window.removeEventListener("keydown", onKey)
       window.removeEventListener("scroll", onScroll)
     }
-  }, [])
+  }, [standalone])
 
   // Pinch-to-zoom refs
   const pinchDistRef       = useRef<number | null>(null)
@@ -544,7 +545,7 @@ export function TempleViewer() {
       <p
         className="absolute z-[45] pointer-events-none font-mono leading-relaxed text-left text-white/55 select-none
                    bg-[#07070f]/70 backdrop-blur-sm border border-white/10 rounded-sm px-2.5 py-2"
-        style={{ top: 12, left: 12, maxWidth: isMobile ? 200 : 265, fontSize: isMobile ? 8 : 9 }}
+        style={{ top: standalone ? (isMobile ? 64 : 72) : 12, left: 12, maxWidth: isMobile ? 200 : 265, fontSize: isMobile ? 8 : 9 }}
       >
         See the tiny figure? They&apos;re wearing a{" "}
         <span className="text-cyan-300/90">Microsoft HoloLens&nbsp;2</span> headset —
@@ -642,7 +643,7 @@ export function TempleViewer() {
         <div className="w-px h-4 bg-white/10 mx-0.5" />
 
         {/* Desktop fullscreen toggle — on mobile the top-right Exit button handles this */}
-        {!isMobile && (
+        {!isMobile && !standalone && (
           <button
             onClick={() => setIsFullscreen(f => !f)}
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
@@ -663,7 +664,7 @@ export function TempleViewer() {
         )}
 
         {/* Mobile fullscreen enter button (exit is the top-right pill) */}
-        {isMobile && !isFullscreen && (
+        {isMobile && !isFullscreen && !standalone && (
           <button
             onClick={() => setIsFullscreen(true)}
             aria-label="Enter fullscreen"
@@ -704,7 +705,7 @@ export function TempleViewer() {
       )}
 
       {/* Exit 3D — hands the gestures back to the page (top-right; caption owns top-left) */}
-      {armed && !isFullscreen && (
+      {armed && !isFullscreen && !standalone && (
         <button
           onClick={() => setArmed(false)}
           aria-label="Exit 3D controls"
