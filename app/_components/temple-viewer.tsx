@@ -382,9 +382,9 @@ export function TempleViewer({ standalone = false }: { standalone?: boolean } = 
     // Standalone (its own page): always armed, never tied to a page scroll position.
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setIsFullscreen(false); if (!standalone) setArmed(false) } }
     // Auto-exit 3D when the user scrolls to another section (KovilLens sits at
-    // snap 3 of the page scroll budget — see page.tsx). Half a viewport away = gone.
+    // snap 2 of the page scroll budget — see page.tsx). Half a viewport away = gone.
     const onScroll = () => {
-      if (Math.abs(window.scrollY - 3 * window.innerHeight) > window.innerHeight * 0.5) setArmed(false)
+      if (Math.abs(window.scrollY - 2 * window.innerHeight) > window.innerHeight * 0.5) setArmed(false)
     }
     if (!standalone) window.addEventListener("scroll", onScroll, { passive: true })
     window.addEventListener("keydown", onKey)

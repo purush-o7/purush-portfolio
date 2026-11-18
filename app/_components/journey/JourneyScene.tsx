@@ -4,10 +4,10 @@ import { useEffect, useRef } from "react"
 import { initJourney } from "./journey-core"
 import { DEMO_CARDS } from "./data"
 import { navToIndex } from "../../_hooks/scroll-nav"
+import { GATE_SNAP }  from "../../_hooks/snap-map"
 import { trackProjectClick } from "../../_lib/analytics"
 
-// Gate lives at snap 10; projects at snaps 11..17 (see page.tsx scroll budget)
-const GATE_SNAP = 10
+// Gate and its projects follow the experience stage (see snap-map.ts)
 
 export function JourneyScene() {
   const ref = useRef<HTMLDivElement>(null)

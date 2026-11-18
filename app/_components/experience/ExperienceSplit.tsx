@@ -1,145 +1,116 @@
 "use client"
 
-import { useRef, useState }   from "react"
-import { navToIndex }         from "../../_hooks/scroll-nav"
-import { ALL_ENTRIES }        from "./data"
-import { RoleContent, MONO }  from "./RoleContent"
-import { EXP_START_SNAP, startYear, useExpProgress } from "./use-exp-progress"
+import { memo } from "react"
 
-const N = ALL_ENTRIES.length
+import { useCallback, useEffect, useRef, useState } from "react"
+import { navToIndex }         from "../../_hooks/scroll-nav"
+import { MONO }               from "./RoleContent"
+import { MetroMap, LaneKey }  from "./MetroMap"
+import { StopPage }           from "./StopPage"
+import { STOPS, LANES, useToday } from "./stops"
+import { EXP_START_SNAP, useExpProgress } from "./use-exp-progress"
+
+const N = STOPS.length
 
 /**
- * Laptop layout — sticky split index.
- * Left: fixed identity + role index (click to jump). Right: a strip of role
- * pages that slides with the page snaps; each page scrolls its own content.
+ * Laptop layout. Left: the metro map (real time scale) — it follows the scroll and every station is a
+ * jump link. Right: the page for the current stop, moving with the scroll, one screen per stop.
  */
-export function ExperienceSplit() {
-  const pageRefs  = useRef<(HTMLDivElement | null)[]>([])
+function ExperienceSplitImpl() {
+  const paneRef  = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([])
+  const centers  = useRef<number[]>([])     // vertical centre of each page inside the track
+  const cpRef    = useRef(0)
   const [active, setActive] = useState(0)
+  const today = useToday()
+
+  // Pages are stacked tightly in one column (no empty screens between them). The column is positioned so
+  // that stop `cp` sits in the middle of the pane; neighbours stay visible above/below, dimmed.
+  const apply = useCallback(() => {
+    const c = centers.current, pane = paneRef.current, track = trackRef.current
+    if (!c.length || !pane || !track) return
+    const cp = cpRef.current
+    const i0 = Math.min(Math.floor(cp), N - 1), i1 = Math.min(i0 + 1, N - 1)
+    const centre = c[i0] + (c[i1] - c[i0]) * (cp - i0)
+    track.style.transform = `translate3d(0, ${(pane.clientHeight / 2 - centre).toFixed(1)}px, 0)`
+    pageRefs.current.forEach((el, i) => {
+      if (el) el.style.opacity = String(1 - Math.min(1, Math.abs(i - cp)) * 0.66)
+    })
+  }, [])
+
+  const measure = useCallback(() => {
+    centers.current = pageRefs.current.map(el => (el ? el.offsetTop + el.offsetHeight / 2 : 0))
+    apply()
+  }, [apply])
+
+  useEffect(() => {
+    measure()
+    const ro = new ResizeObserver(measure)
+    pageRefs.current.forEach(el => el && ro.observe(el))
+    if (paneRef.current) ro.observe(paneRef.current)
+    return () => ro.disconnect()
+  }, [measure])
 
   useExpProgress(cp => {
-    // Roles crossfade in place with a small slide — no empty stretch between them while scrolling.
-    pageRefs.current.forEach((el, i) => {
-      if (!el) return
-      const d = i - cp
-      const o = Math.max(0, Math.min(1, 1 - (Math.abs(d) - 0.12) * 2.6))   // near-complete at rest, almost no overlap mid-change
-      el.style.opacity       = String(o)
-      el.style.transform     = `translateY(${d * 72}px)`
-      el.style.pointerEvents = o > 0.5 ? "auto" : "none"
-    })
+    cpRef.current = cp
+    apply()
     setActive(Math.round(cp))
   })
 
-  const accent = ALL_ENTRIES[active].accent
+  const accent = LANES[STOPS[active].lane].color
 
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", background: "#07070f" }}>
 
-      {/* ── Left: identity + index ─────────────────────────────────────────── */}
+      {/* ── Left: identity + metro map ─────────────────────────────────────── */}
       <aside style={{
-        width: "34%", minWidth: 320, maxWidth: 480, flexShrink: 0,
-        position: "relative", overflow: "hidden",
-        borderRight: "1px solid rgba(255,255,255,0.07)",
-        padding: "56px 48px",
-        display: "flex", flexDirection: "column", justifyContent: "space-between",
+        width: "36%", minWidth: 340, maxWidth: 520, flexShrink: 0, position: "relative", overflow: "hidden",
+        borderRight: "1px solid rgba(255,255,255,0.07)", padding: "clamp(24px, 5vh, 48px) 40px clamp(20px, 3vh, 32px)",
+        display: "flex", flexDirection: "column", gap: 10,
       }}>
-        {ALL_ENTRIES.map((e, i) => (
-          <div key={i} aria-hidden style={{
-            position: "absolute", inset: 0, pointerEvents: "none",
-            background: `radial-gradient(ellipse 120% 55% at 0% 0%, ${e.accent}2e 0%, transparent 70%)`,
-            opacity: i === active ? 1 : 0, transition: "opacity 0.6s ease",
-          }} />
-        ))}
+        <div aria-hidden style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: `radial-gradient(ellipse 120% 45% at 0% 0%, ${accent}2e 0%, transparent 70%)`, transition: "background 0.6s ease",
+        }} />
 
         <div style={{ position: "relative" }}>
-          <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: accent, transition: "color 0.4s" }}>
-            Experience
-          </span>
-          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 34, fontWeight: 700, color: "#fff", margin: "14px 0 0", lineHeight: 1.05, letterSpacing: "-0.015em" }}>
-            Purushottam Reddy
-          </h2>
-          <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", margin: "10px 0 0" }}>
-            Full-stack · ML engineer
-          </p>
+          <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: accent, transition: "color 0.4s" }}>Experience</span>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 30, fontWeight: 700, color: "#fff", margin: "10px 0 0", lineHeight: 1.05, letterSpacing: "-0.015em" }}>Purushottam Reddy</h2>
+          <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", margin: "8px 0 0" }}>Full-stack · ML engineer</p>
         </div>
 
-        <nav aria-label="Roles" style={{ position: "relative", display: "flex", flexDirection: "column", gap: 4 }}>
-          {ALL_ENTRIES.map((e, i) => {
-            const on = i === active
-            return (
-              <button
-                key={i}
-                onClick={() => navToIndex(EXP_START_SNAP + i)}
-                aria-current={on ? "true" : undefined}
-                style={{
-                  all: "unset", boxSizing: "border-box", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 14, padding: "9px 0",
-                  fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: on ? 600 : 500,
-                  color: on ? "#fff" : "rgba(255,255,255,0.42)", transition: "color 0.3s",
-                }}
-              >
-                <span aria-hidden style={{
-                  display: "block", height: 2, borderRadius: 1, flexShrink: 0,
-                  width: on ? 40 : 16, background: on ? e.accent : "rgba(255,255,255,0.28)",
-                  transition: "width 0.35s cubic-bezier(.3,.8,.3,1), background 0.3s",
-                }} />
-                <span style={{ flex: 1 }}>{e.short}</span>
-                <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.1em", color: on ? e.accent : "rgba(255,255,255,0.28)" }}>
-                  {startYear(e.period)}
-                </span>
-              </button>
-            )
-          })}
-        </nav>
+        <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+          <MetroMap sel={active} today={today} onSel={i => navToIndex(EXP_START_SNAP + i)} />
+        </div>
 
-        <div style={{ position: "relative", fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
-          2022 → 2026 · {String(active + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}
+        <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
+          <LaneKey />
+          <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>
+            {String(active + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}
+          </span>
         </div>
       </aside>
 
-      {/* ── Right: role pages ──────────────────────────────────────────────── */}
-      <div style={{ flex: 1, minWidth: 0, position: "relative", overflow: "hidden" }}>
-          {ALL_ENTRIES.map((e, i) => (
+      {/* ── Right: stop pages — one tight column that scrolls with the page ── */}
+      <div ref={paneRef} style={{ flex: 1, minWidth: 0, position: "relative", overflow: "hidden" }}>
+        <div ref={trackRef} style={{ position: "absolute", top: 0, left: 0, right: 0, willChange: "transform" }}>
+          {STOPS.map((s, i) => (
             <div
               key={i}
               ref={el => { pageRefs.current[i] = el }}
               style={{
-                position: "absolute", inset: 0, willChange: "transform, opacity",
-                display: "flex", flexDirection: "column", justifyContent: "center",
-                padding: "clamp(20px, 4.4vh, 40px) 72px clamp(20px, 4.4vh, 40px) 64px", opacity: i === 0 ? 1 : 0,
+                display: "flex", flexDirection: "column", padding: "clamp(16px, 3.2vh, 30px) 72px clamp(16px, 3.2vh, 30px) 64px",
+                opacity: i === 0 ? 1 : 0.34, willChange: "opacity",
               }}
             >
-              <header style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 12, paddingBottom: "clamp(16px, 3vh, 28px)" }}>
-                <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", color: e.accent }}>
-                  {e.period} · {e.duration}
-                </span>
-                <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(34px, 5.2vh, 46px)", fontWeight: 700, color: "#fff", lineHeight: 1.08, margin: 0, letterSpacing: "-0.02em" }}>
-                  {e.role}
-                </h3>
-                <p style={{ fontFamily: "var(--font-sans)", fontSize: 17, color: "rgba(255,255,255,0.62)", margin: 0 }}>
-                  {e.org}{e.location ? ` · ${e.location}` : ""}
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                  {e.tech.slice(0, 6).map(t => (
-                    <span key={t} style={{
-                      fontFamily: MONO, fontSize: 12, letterSpacing: "0.06em", padding: "4px 11px", borderRadius: 4,
-                      background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.14)", color: "rgba(255,255,255,0.68)",
-                    }}>{t}</span>
-                  ))}
-                </div>
-              </header>
-
-              <div
-                style={{
-                  flex: "0 1 auto", minHeight: 0, overflowY: "auto",
-                  paddingBottom: 8, scrollbarWidth: "none",
-                }}
-              >
-                <RoleContent entry={e} />
-              </div>
+              <StopPage stop={s} />
             </div>
           ))}
+        </div>
       </div>
     </div>
   )
 }
+
+export const ExperienceSplit = memo(ExperienceSplitImpl)

@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import { useEffect, useRef, useState }  from "react"
 import { TriangleAlert, Info, CircleX } from "lucide-react"
 import { TERMINAL_LINES, OUTPUT_LINES, PROBLEM_LINES } from "./data"
@@ -53,7 +55,7 @@ interface Props {
   compact?:    boolean
 }
 
-export function TerminalPanel({ active, onComplete, compact = false }: Props) {
+function TerminalPanelImpl({ active, onComplete, compact = false }: Props) {
   const [activeTab, setActiveTab] = useState<PanelTab>("TERMINAL")
   const [visible,   setVisible]   = useState(0)
   const doneRef       = useRef(false)
@@ -181,3 +183,5 @@ export function TerminalPanel({ active, onComplete, compact = false }: Props) {
     </div>
   )
 }
+
+export const TerminalPanel = memo(TerminalPanelImpl)

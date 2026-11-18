@@ -1,10 +1,12 @@
 "use client"
 
+import { memo } from "react"
+
 import { Codicon } from "./Codicon"
 import { ACCENT, MONO } from "./data"
 
 /** macOS-style VS Code title bar: traffic lights, file · workspace — Visual Studio Code. */
-export function VsTitleBar() {
+function VsTitleBarImpl() {
   return (
     <div style={{
       height: 34, flexShrink: 0, display: "flex", alignItems: "center", gap: 12, padding: "0 14px",
@@ -28,7 +30,7 @@ export function VsTitleBar() {
 const item: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, padding: "0 8px", height: "100%", whiteSpace: "nowrap" }
 
 /** VS Code status bar for the desktop window. */
-export function VsStatusBar() {
+function VsStatusBarImpl() {
   return (
     <div style={{
       height: 26, flexShrink: 0, background: ACCENT, color: "#07070f", display: "flex", alignItems: "stretch", justifyContent: "space-between",
@@ -51,3 +53,7 @@ export function VsStatusBar() {
     </div>
   )
 }
+
+export const VsTitleBar = memo(VsTitleBarImpl)
+
+export const VsStatusBar = memo(VsStatusBarImpl)

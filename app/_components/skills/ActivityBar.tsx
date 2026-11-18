@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import { Codicon } from "./Codicon"
 
 const TOP = [
@@ -15,7 +17,7 @@ const BOTTOM = [
 ]
 
 /** VS Code activity bar — decorative icon strip using the real codicons. */
-export function ActivityBar() {
+function ActivityBarImpl() {
   return (
     <div style={{
       width: 48, flexShrink: 0, background: "#04040d", borderRight: "1px solid rgba(255,255,255,0.05)",
@@ -49,3 +51,5 @@ export function ActivityBar() {
     </div>
   )
 }
+
+export const ActivityBar = memo(ActivityBarImpl)

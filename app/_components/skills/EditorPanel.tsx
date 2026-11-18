@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import { useEffect, useRef, useState } from "react"
 import { SKILL_CATEGORIES }            from "./data"
 import { Codicon, FileIcon }          from "./Codicon"
@@ -72,7 +74,7 @@ interface Props {
   compact?:    boolean
 }
 
-export function EditorPanel({ active, onComplete, compact = false }: Props) {
+function EditorPanelImpl({ active, onComplete, compact = false }: Props) {
   const [visible, setVisible] = useState(0)
   const doneRef       = useRef(false)
   const onCompleteRef = useRef(onComplete)
@@ -231,3 +233,5 @@ function Minimap({ visible }: { visible: number }) {
     </div>
   )
 }
+
+export const EditorPanel = memo(EditorPanelImpl)

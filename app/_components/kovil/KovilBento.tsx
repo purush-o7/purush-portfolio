@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import Image                 from "next/image"
 import Link                  from "next/link"
 import { useState }          from "react"
@@ -40,7 +42,7 @@ function hover(on: boolean) {
  * Laptop layout — project bento. Everything about KovilLens at a glance; the live
  * 3D opens on its own full-space page via the Explore tile.
  */
-export function KovilBento({ onPhoto }: { onPhoto: (i: number) => void }) {
+function KovilBentoImpl({ onPhoto }: { onPhoto: (i: number) => void }) {
   const [paused, setPaused] = useState(false)
 
   return (
@@ -196,3 +198,5 @@ export function KovilBento({ onPhoto }: { onPhoto: (i: number) => void }) {
     </div>
   )
 }
+
+export const KovilBento = memo(KovilBentoImpl)

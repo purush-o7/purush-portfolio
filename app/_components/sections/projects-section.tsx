@@ -5,6 +5,7 @@ import { useState, useEffect }     from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useScrollProgress }       from "../../_hooks/use-scroll-progress"
 import { useViewport }             from "../../_hooks/use-viewport"
+import { SNAP_EDU, SNAP_PROJECTS } from "../../_hooks/snap-map"
 import { KovilBento }              from "../kovil/KovilBento"
 import { KovilChapters }           from "../kovil/KovilChapters"
 import { IMAGES, MONO }            from "../kovil/data"
@@ -18,14 +19,14 @@ export function ProjectsSection() {
   const { width } = useViewport()
   const isMobile  = width < 768
 
-  // Visible while on this section (scrollY 2vh → 4vh)
+  // Slides in over the Education card (scrollY 1vh → 2vh), leaves as Skills arrives (2vh → 3vh)
   const p = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
-    typeof window !== "undefined" ? 2 * window.innerHeight : 1600,
+    typeof window !== "undefined" ? SNAP_EDU * window.innerHeight : 800,
   )
   const exit = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
-    typeof window !== "undefined" ? 3 * window.innerHeight : 2400,
+    typeof window !== "undefined" ? SNAP_PROJECTS * window.innerHeight : 1600,
   )
 
   const [lightbox, setLightbox] = useState<number | null>(null)

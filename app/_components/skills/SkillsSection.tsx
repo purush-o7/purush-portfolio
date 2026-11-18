@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useScrollProgress }                from "../../_hooks/use-scroll-progress"
 import { useMobile }                        from "../../_hooks/use-mobile"
+import { SNAP_PROJECTS, SNAP_SKILLS }       from "../../_hooks/snap-map"
 import { EditorPanel }                      from "./EditorPanel"
 import { TerminalPanel }                    from "./TerminalPanel"
 import { ChatPanel }                        from "./ChatPanel"
@@ -21,11 +22,11 @@ export function SkillsSection() {
 
   const p = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight     : 800,
-    typeof window !== "undefined" ? 3 * window.innerHeight : 2400,
+    typeof window !== "undefined" ? SNAP_PROJECTS * window.innerHeight : 1600,
   )
   const exit = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight     : 800,
-    typeof window !== "undefined" ? 4 * window.innerHeight : 3200,
+    typeof window !== "undefined" ? SNAP_SKILLS * window.innerHeight : 2400,
   )
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export function SkillsSection() {
       padding:    isMobile ? "10px" : "16px",
     }}>
 
-      <AmoebaBg />
+      {!isMobile && <AmoebaBg />}   {/* the moving background is laptop-only */}
 
       <div style={{
         position: "relative", height: "100%",

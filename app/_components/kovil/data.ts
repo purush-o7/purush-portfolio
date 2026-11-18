@@ -3,7 +3,7 @@ import { trackProjectClick } from "../../_lib/analytics"
 export const MONO = "var(--font-geist-mono)"
 
 /** Where the KovilLens section lives in the snap order (see page.tsx). */
-export const KOVIL_SNAP = 3
+export const KOVIL_SNAP = 2
 
 export const DEMO_URL = "https://drive.google.com/file/d/1lllf3tCQryNS4RoeqSIFmSF3VF5SIgCL/view"
 export const PAPER_URL = "https://ieeexplore.ieee.org/abstract/document/11172645"

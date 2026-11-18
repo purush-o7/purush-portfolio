@@ -19,7 +19,7 @@ export interface JourneyAPI {
 
 const MONO = "var(--font-geist-mono)"
 const DISP = "var(--font-heading)"
-const GATE_SNAP = 10                      // page snap index of the gateway
+import { GATE_SNAP } from "../../_hooks/snap-map"   // page snap index of the gateway
 
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))

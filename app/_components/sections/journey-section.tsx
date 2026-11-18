@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
+import { EXP_END_SNAP }      from "../../_hooks/snap-map"
 
 const JourneyScene = dynamic(
   () => import("../journey/JourneyScene").then((m) => m.JourneyScene),
@@ -9,11 +10,11 @@ const JourneyScene = dynamic(
 )
 
 export function JourneySection() {
-  // Visible at scroll ≥ 9vh while ExperienceSection (z-15) still covers us (z-12).
-  // Revealed as ExperienceSection exits upward during 9vh → 10vh.
+  // Visible once the last experience snap is reached, while ExperienceSection (z-15) still covers us (z-12).
+  // Revealed as ExperienceSection exits upward over the last snap.
   const p = useScrollProgress(
     typeof window !== "undefined" ? 10 : 10,
-    typeof window !== "undefined" ? 9 * window.innerHeight - 10 : 7190,
+    typeof window !== "undefined" ? EXP_END_SNAP * window.innerHeight - 10 : 8790,
   )
 
   return (

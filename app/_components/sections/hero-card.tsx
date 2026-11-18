@@ -1,11 +1,15 @@
 "use client"
 
-import { useScrollProgress } from "../../_hooks/use-scroll-progress"
-import { useMobile }          from "../../_hooks/use-mobile"
-import { CanvasWrapper }     from "../canvas-wrapper"
-import { BioPanel }          from "../bio-panel"
-import { HintOverlay }       from "./hint-overlay"
+import { useScrollProgress }   from "../../_hooks/use-scroll-progress"
+import { useMobile }           from "../../_hooks/use-mobile"
+import { CanvasWrapper }       from "../canvas-wrapper"
+import { HintOverlay }         from "./hint-overlay"
+import { HeroOverlay }         from "./hero-overlay"
 
+/**
+ * Hero — a full-bleed particle portrait with the name set huge over it (HeroOverlay).
+ * Laptop: portrait sits right of centre at full height. Phone: portrait on top, name and facts below it.
+ */
 export function HeroCard() {
   const p        = useScrollProgress()
   const isMobile = useMobile()
@@ -18,24 +22,18 @@ export function HeroCard() {
         willChange: "transform",
       }}
     >
-      <main className="flex flex-col md:flex-row h-screen w-screen">
-        {/* Canvas: top 50% on mobile, left 2/3 on desktop */}
-        <section
-          className="relative w-full md:w-2/3 h-1/2 md:h-full"
-          data-no-scroll-snap={isMobile ? "true" : undefined}
-        >
-          <CanvasWrapper />
-          <HintOverlay />
-        </section>
+      {/* Portrait — the canvas fills the whole hero so particles fly in from every edge and corner;
+          the camera places the face right of centre (laptop) or in the top 64% (phone). */}
+      <div className="absolute inset-0">
+        <CanvasWrapper focus={isMobile ? { x: 0.5, y: 0.4, k: 0.8 } : { x: 0.64, y: 0.5, k: 1 }} />
+      </div>
+      <section
+        className={isMobile ? "absolute inset-x-0 top-0 h-[70%]" : "absolute inset-y-0 right-0 left-[26%]"}
+      >
+        <HintOverlay />
+      </section>
 
-        {/* Divider: horizontal on mobile, vertical on desktop */}
-        <div className="w-full h-px md:w-px md:h-full bg-white/[0.06] shrink-0" />
-
-        {/* Bio: bottom 50% on mobile, right 1/3 on desktop */}
-        <section className="w-full md:w-1/3 h-1/2 md:h-full overflow-y-auto">
-          <BioPanel />
-        </section>
-      </main>
+      <HeroOverlay ready mobile={isMobile} />   {/* text and links never wait for the portrait */}
     </div>
   )
 }

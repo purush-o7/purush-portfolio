@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import { useState }        from "react"
 import { Codicon }         from "./Codicon"
 import { TerminalPanel }   from "./TerminalPanel"
@@ -24,7 +26,7 @@ interface Props {
  * One folder is open at a time so the whole tree fits the screen (no nested scrolling).
  * Terminal and Chat open from the bottom bar, like VS Code's panel.
  */
-export function MobileSkills({ chatVersion, onClear }: Props) {
+function MobileSkillsImpl({ chatVersion, onClear }: Props) {
   const [tab,  setTab]  = useState<Tab>("explorer")
   const [open, setOpen] = useState(0)
   const [sel,  setSel]  = useState<string>(SKILL_CATEGORIES[0].skills[0])
@@ -154,3 +156,5 @@ export function MobileSkills({ chatVersion, onClear }: Props) {
     </div>
   )
 }
+
+export const MobileSkills = memo(MobileSkillsImpl)

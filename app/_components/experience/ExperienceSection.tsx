@@ -3,22 +3,23 @@
 import { useViewport }       from "../../_hooks/use-viewport"
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
 import { ExperienceSplit }   from "./ExperienceSplit"
-import { ExperienceSpine }   from "./ExperienceSpine"
+import { ExperiencePhone }   from "./ExperiencePhone"
+import { EXP_START_SNAP, EXP_END_SNAP } from "../../_hooks/snap-map"
 
-// Experience owns snaps 5–9 (one per role). The shell reveals it at 4vh (as Skills
-// slides off) and lifts it away at 9vh→10vh when the Journey gateway takes over.
-// Laptop: sticky split index. Phone: drawing spine + bottom sheet.
+// Experience owns one snap per stop on the metro line (see snap-map.ts). The shell reveals it just before
+// its first snap (as Skills slides off) and lifts it away over the last snap when the Journey gateway takes over.
+// Laptop: metro map + stop pages. Phone: full-screen metro map + stop card + drawer.
 export function ExperienceSection() {
   const { width } = useViewport()
 
   const visible = useScrollProgress(
     typeof window !== "undefined" ? 10 : 10,
-    typeof window !== "undefined" ? 4 * window.innerHeight - 10 : 3190,
+    typeof window !== "undefined" ? (EXP_START_SNAP - 1) * window.innerHeight - 10 : 2390,
   )
 
   const exit = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
-    typeof window !== "undefined" ? 9 * window.innerHeight : 7200,
+    typeof window !== "undefined" ? EXP_END_SNAP * window.innerHeight : 8800,
   )
 
   return (
@@ -33,7 +34,7 @@ export function ExperienceSection() {
         willChange: "transform",
       }}
     >
-      {width > 0 && (width < 768 ? <ExperienceSpine /> : <ExperienceSplit />)}
+      {width > 0 && (width < 768 ? <ExperiencePhone /> : <ExperienceSplit />)}
     </div>
   )
 }

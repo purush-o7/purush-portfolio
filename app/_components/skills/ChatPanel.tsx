@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence }     from "framer-motion"
 import { ACCENT, MONO, CHAT_INITIAL, CHAT_OPTIONS, CHAT_CLOSING } from "./data"
@@ -57,7 +59,7 @@ function UserAvatar({ compact }: { compact: boolean }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 interface Props { active: boolean; clearTrigger?: number; onClear?: () => void; compact?: boolean }
 
-export function ChatPanel({ active, clearTrigger = 0, onClear, compact = false }: Props) {
+function ChatPanelImpl({ active, clearTrigger = 0, onClear, compact = false }: Props) {
   const [messages,  setMessages]  = useState<Message[]>([])
   const [usedIds,   setUsedIds]   = useState<Set<string>>(new Set())
   const [isTyping,  setIsTyping]  = useState(false)
@@ -310,3 +312,5 @@ export function ChatPanel({ active, clearTrigger = 0, onClear, compact = false }
     </div>
   )
 }
+
+export const ChatPanel = memo(ChatPanelImpl)

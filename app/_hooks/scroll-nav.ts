@@ -2,8 +2,10 @@
 
 // Section start snap indices — must match page.tsx scroll positions
 // Each index = the snap where the section is FULLY visible
-// Hero=0, Education=1, Projects=3 (entry runs 2→3), Skills=4, Experience=5, Cylinder=10, Footer=18
-export const SECTION_STARTS = [0, 1, 3, 4, 5, 10, 18]
+import { SNAP_EDU, SNAP_PROJECTS, SNAP_SKILLS, EXP_START_SNAP, GATE_SNAP } from "./snap-map"
+
+// Hero, Education, Projects, Skills, Experience, Journey gateway, Footer (footer = last snap)
+export const SECTION_STARTS = [0, SNAP_EDU, SNAP_PROJECTS, SNAP_SKILLS, EXP_START_SNAP, GATE_SNAP, GATE_SNAP + 8]
 
 let _goTo:      ((idx: number) => void) | null = null
 let _getCurrent: (() => number) | null         = null

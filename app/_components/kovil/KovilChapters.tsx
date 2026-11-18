@@ -1,9 +1,10 @@
 "use client"
 
+import { memo } from "react"
+
 import Image                  from "next/image"
 import Link                   from "next/link"
 import { useRef, useState }   from "react"
-import { AmoebaBg }           from "../skills/AmoebaBg"
 import {
   MONO, SRC, STACK, DESCRIPTION, DEMO_URL, PAPER_URL, DOI, IMAGES, openExplorer, trackDemo,
 } from "./data"
@@ -28,7 +29,7 @@ const btn: React.CSSProperties = {
  * Phone layout — chapter cards. A visual on top crossfades to match the card you
  * swipe to; the 3D explorer opens on its own full-space page.
  */
-export function KovilChapters({ onPhoto }: { onPhoto: (i: number) => void }) {
+function KovilChaptersImpl({ onPhoto }: { onPhoto: (i: number) => void }) {
   const rowRef = useRef<HTMLDivElement>(null)
   const [idx, setIdx] = useState(0)
   const [moved, setMoved] = useState(false)
@@ -62,26 +63,21 @@ export function KovilChapters({ onPhoto }: { onPhoto: (i: number) => void }) {
 
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
-      <AmoebaBg />
-
       {/* ── Visual — changes with the card ─────────────────────────────────── */}
       <div style={{ position: "relative", flex: "1 1 0", minHeight: 0, overflow: "hidden", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
 
         {/* 0 · Intro — two photos stacked top and bottom, labelled Live / Mixed Reality */}
         <div style={layer(0)} aria-hidden={idx !== 0}>
-          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 90% 70% at 50% 40%, rgba(20,24,58,0.35) 0%, rgba(7,7,15,0.15) 75%)" }} />
+          {/* two photos fill the whole top, edge to edge, with no gap between them */}
           {[
-            { src: SRC.aerial, alt: "Moovar Kovil — aerial view",       top: "calc(env(safe-area-inset-top, 0px) + 14px)", label: "Live",          live: true  },
-            { src: SRC.models, alt: "HoloLens 2 demo at Moovar Kovil",  top: "calc(50% + 6px)",                              label: "Mixed Reality", live: false },
+            { src: SRC.aerial, alt: "Moovar Kovil — aerial view",       top: "0%",  label: "Live",          live: true  },
+            { src: SRC.models, alt: "HoloLens 2 demo at Moovar Kovil",  top: "50%", label: "Mixed Reality", live: false },
           ].map(ph => (
-            <div key={ph.label} style={{
-              position: "absolute", left: 16, right: 16, top: ph.top, height: "calc(50% - 20px - env(safe-area-inset-top, 0px) / 2)",
-              borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.16)", boxShadow: "0 22px 44px -18px #000",
-            }}>
+            <div key={ph.label} style={{ position: "absolute", left: 0, right: 0, top: ph.top, height: "50%", overflow: "hidden" }}>
               <Image src={ph.src} alt={ph.alt} fill sizes="100vw" style={{ objectFit: "cover" }} priority />
               <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(7,7,15,0.5) 0%, rgba(7,7,15,0) 40%)" }} />
               <span style={{
-                position: "absolute", left: 12, top: 12, display: "inline-flex", alignItems: "center", gap: 8,
+                position: "absolute", left: 14, top: ph.live ? "calc(14px + env(safe-area-inset-top, 0px))" : 14, display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "6px 12px", borderRadius: 999, background: "rgba(7,7,15,0.62)", border: "1px solid rgba(34,229,240,0.45)",
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 fontFamily: MONO, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "#fff",
@@ -256,3 +252,5 @@ function Chips({ items }: { items: string[] }) {
     </div>
   )
 }
+
+export const KovilChapters = memo(KovilChaptersImpl)

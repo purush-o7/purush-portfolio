@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { registerNav, SECTION_STARTS } from "./scroll-nav"
+import { EXP_START_SNAP, EXP_END_SNAP } from "./snap-map"
 import { trackSectionView }            from "../_lib/analytics"
 
 const ANIM_MS        = 900   // snap animation duration (ms)
@@ -12,10 +13,16 @@ const TOUCH_MIN      = 35    // px — distance threshold (slow deliberate drag)
 const VEL_SNAP       = 0.3   // px/ms — velocity threshold (quick flick)
 const WHEEL_GAP_MS   = 220   // wheel silence that separates one gesture from the next
 
-// "Free scroll" stage: the Experience roles (snaps 5–9) scroll natively and smoothly
-// instead of stepping. The edges still hand off to the snap engine.
-const FREE_FROM      = 5
-const FREE_TO        = 9
+// "Free scroll" stage: from the hero to the end of Experience the page scrolls natively and smoothly
+// (Projects, Skills and every experience stop slide in 1:1 with the wheel or finger) instead of stepping.
+// The edges still hand off to the snap engine.
+const FREE_FROM      = 0
+const FREE_TO        = EXP_END_SNAP
+// Between Education and the start of Experience each section needs a full-screen rest: if the user stops
+// part-way through a slide-over, ease to the nearest one (a gentle settle, not a controlled step).
+const SETTLE_TO      = EXP_START_SNAP
+const SETTLE_IDLE_MS = 170
+const SETTLE_MS      = 480
 const FREE_TAIL_MS   = 500   // keep clamping to the stage for a moment after the last free event
 
 function easeInOutCubic(t: number) {
@@ -48,6 +55,8 @@ export function useScrollSnap(sections: number) {
   const freeGesture = useRef(false)                  // current wheel gesture scrolls natively
   const touchFree   = useRef<boolean | null>(null)   // current touch gesture: undecided / native / snap
   const freeUntil   = useRef(0)                      // clamp-to-stage window (performance.now)
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const touching    = useRef(false)
 
   useEffect(() => {
     // Coming back from a full-page route (e.g. the 3D explorer): land on the snap we left from.
@@ -166,8 +175,19 @@ export function useScrollSnap(sections: number) {
         if (freeGesture.current) {
           const y = window.scrollY
           const atEdge = (dir > 0 && y >= FREE_TO * vh() - 1) || (dir < 0 && y <= FREE_FROM * vh() + 1)
-          if (!atEdge) { freeUntil.current = now + FREE_TAIL_MS; return }
-          e.preventDefault()
+          if (atEdge) { e.preventDefault(); return }
+
+          // Over a scrolling panel (Skills editor / terminal / chat): the panel scrolls natively while it has room.
+          // Once it has run out, the page takes over — manually, because the panels use overscroll-behavior: contain.
+          const pt = getPassthrough(e.target)
+          if (pt) {
+            if (isNewGesture) wheelAtBoundary.current = !canScroll(pt, dir > 0)
+            if (canScroll(pt, dir > 0)) return                          // inner content scrolls
+            if (!wheelAtBoundary.current) { e.preventDefault(); return } // gesture began mid-content: absorb its tail
+            e.preventDefault()
+            window.scrollBy(0, e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY)
+          }
+          freeUntil.current = now + FREE_TAIL_MS
           return
         }
       }
@@ -214,6 +234,7 @@ export function useScrollSnap(sections: number) {
     }
 
     function onTouchStart(e: TouchEvent) {
+      touching.current  = true
       touchFree.current = null
       if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
       syncCurrent()
@@ -237,7 +258,7 @@ export function useScrollSnap(sections: number) {
       // Free-scroll stage: decide once the direction is known; native scrolling = no preventDefault.
       if (touchFree.current === null && !(e.target as Element | null)?.closest("[data-no-scroll-snap]")) {
         const dy = e.touches[0].clientY - touchStartY.current
-        if (Math.abs(dy) > 6) touchFree.current = freeFor(dy < 0 ? 1 : -1)
+        if (Math.abs(dy) > 6) touchFree.current = pt ? false : freeFor(dy < 0 ? 1 : -1)   // scrolling panels keep the snap hand-off
       }
       if (touchFree.current) { freeUntil.current = performance.now() + FREE_TAIL_MS; return }
       if (pt) return   // let browser scroll the element; boundary handled in touchEnd
@@ -245,7 +266,8 @@ export function useScrollSnap(sections: number) {
     }
 
     function onTouchEnd(e: TouchEvent) {
-      if (touchFree.current) { touchFree.current = null; return }   // native scroll handled it
+      touching.current = false
+      if (touchFree.current) { touchFree.current = null; scheduleSettle(); return }   // native scroll handled it
       touchFree.current = null
       if (locked.current) return
       if ((e.target as Element | null)?.closest("[data-no-scroll-snap]")) return
@@ -286,8 +308,22 @@ export function useScrollSnap(sections: number) {
     }
 
     // Native momentum can carry the page past the free stage — pin it back to the edge.
+    function scheduleSettle() {
+      if (settleTimer.current) clearTimeout(settleTimer.current)
+      settleTimer.current = setTimeout(() => {
+        if (touching.current || rafRef.current !== null || locked.current) return
+        const y = window.scrollY, h = vh()
+        if (y <= FREE_FROM * h + 2 || y >= SETTLE_TO * h - 2) return          // already at rest, or inside the continuous stage
+        const target = Math.round(y / h) * h
+        if (Math.abs(target - y) < 2) return
+        current.current = Math.round(y / h)
+        animateScroll(target, () => { onSectionChange(current.current) }, SETTLE_MS, easeOutCubic)
+      }, SETTLE_IDLE_MS)
+    }
+
     function onScroll() {
       const now = performance.now()
+      if (rafRef.current === null) scheduleSettle()
       if (now > freeUntil.current || rafRef.current !== null) return
       const y = window.scrollY, a = FREE_FROM * vh(), b = FREE_TO * vh()
       if (y > b)      window.scrollTo(0, b)
@@ -305,6 +341,7 @@ export function useScrollSnap(sections: number) {
     return () => {
       if (rafRef.current !== null)    cancelAnimationFrame(rafRef.current)
       if (wheelEndTimer.current)      clearTimeout(wheelEndTimer.current)
+      if (settleTimer.current)        clearTimeout(settleTimer.current)
       window.removeEventListener("scroll",     onScroll)
       window.removeEventListener("wheel",      onWheel)
       window.removeEventListener("touchstart", onTouchStart)

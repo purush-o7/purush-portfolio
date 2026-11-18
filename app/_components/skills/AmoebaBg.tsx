@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import { useEffect, useRef } from "react"
 
 const SZ    = "80%"
@@ -45,7 +47,7 @@ const BLOBS = [
   },
 ]
 
-export function AmoebaBg() {
+function AmoebaBgImpl() {
   const interRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -148,3 +150,5 @@ export function AmoebaBg() {
     </div>
   )
 }
+
+export const AmoebaBg = memo(AmoebaBgImpl)
