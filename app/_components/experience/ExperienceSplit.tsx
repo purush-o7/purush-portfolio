@@ -3,12 +3,12 @@
 import { memo } from "react"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { navToIndex }         from "../../_hooks/scroll-nav"
 import { MONO }               from "./RoleContent"
 import { MetroMap, LaneKey }  from "./MetroMap"
 import { StopPage }           from "./StopPage"
 import { STOPS, LANES, useToday } from "./stops"
-import { EXP_START_SNAP, useExpProgress } from "./use-exp-progress"
+import { useExpProgress } from "./use-exp-progress"
+import { setLaptopExpStops, setStopFractions, scrollToStop, snapMapNow } from "../../_hooks/snap-map"
 
 const N = STOPS.length
 
@@ -25,22 +25,29 @@ function ExperienceSplitImpl() {
   const [active, setActive] = useState(0)
   const today = useToday()
 
-  // Pages are stacked tightly in one column (no empty screens between them). The column is positioned so
-  // that stop `cp` sits in the middle of the pane; neighbours stay visible above/below, dimmed.
+  // Pages are stacked tightly in one column. The column moves with the scroll position (0 → its full length), and the
+  // stage's scroll length is set from the column's own length (below), so the movement is close to 1:1 with the wheel.
   const apply = useCallback(() => {
     const c = centers.current, pane = paneRef.current, track = trackRef.current
     if (!c.length || !pane || !track) return
-    const cp = cpRef.current
-    const i0 = Math.min(Math.floor(cp), N - 1), i1 = Math.min(i0 + 1, N - 1)
-    const centre = c[i0] + (c[i1] - c[i0]) * (cp - i0)
-    track.style.transform = `translate3d(0, ${(pane.clientHeight / 2 - centre).toFixed(1)}px, 0)`
+    const D    = c[N - 1] - c[0]                                   // distance the column travels
+    const t    = Math.max(0, Math.min(1, cpRef.current / Math.max(1, snapMapNow().expStops - 1)))
+    const mid  = c[0] + t * D                                      // the column position that sits at the pane's centre
+    track.style.transform = `translate3d(0, ${(pane.clientHeight / 2 - mid).toFixed(1)}px, 0)`
+    let best = 0
     pageRefs.current.forEach((el, i) => {
-      if (el) el.style.opacity = String(1 - Math.min(1, Math.abs(i - cp)) * 0.66)
+      const d = Math.abs(c[i] - mid)
+      if (d < Math.abs(c[best] - mid)) best = i
+      if (el) el.style.opacity = String(1 - Math.min(1, d / (pane.clientHeight * 0.55)) * 0.66)
     })
+    setActive(a => (a === best ? a : best))
   }, [])
 
   const measure = useCallback(() => {
     centers.current = pageRefs.current.map(el => (el ? el.offsetTop + el.offsetHeight / 2 : 0))
+    const D = centers.current[N - 1] - centers.current[0]
+    setLaptopExpStops(1 + Math.ceil(D / window.innerHeight))       // stage length = content length
+    setStopFractions(centers.current.map(c => (D > 0 ? (c - centers.current[0]) / D : 0)))
     apply()
   }, [apply])
 
@@ -52,11 +59,7 @@ function ExperienceSplitImpl() {
     return () => ro.disconnect()
   }, [measure])
 
-  useExpProgress(cp => {
-    cpRef.current = cp
-    apply()
-    setActive(Math.round(cp))
-  })
+  useExpProgress(cp => { cpRef.current = cp; apply() })
 
   const accent = LANES[STOPS[active].lane].color
 
@@ -81,7 +84,7 @@ function ExperienceSplitImpl() {
         </div>
 
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-          <MetroMap sel={active} today={today} onSel={i => navToIndex(EXP_START_SNAP + i)} />
+          <MetroMap sel={active} today={today} onSel={scrollToStop} />
         </div>
 
         <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>

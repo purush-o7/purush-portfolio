@@ -9,7 +9,7 @@ import {
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
 import { useMobile }         from "../../_hooks/use-mobile"
 import { navToIndex }        from "../../_hooks/scroll-nav"
-import { EXP_START_SNAP, snapMapNow } from "../../_hooks/snap-map"
+import { EXP_START_SNAP, snapMapNow, scrollToStop } from "../../_hooks/snap-map"
 import { STOPS }             from "../experience/stops"
 
 const HEAD = "var(--font-heading)"
@@ -198,7 +198,7 @@ function Phone({ state }: { state: string }) {
             {CHIPS.map(c => (
               <button
                 key={c.label}
-                onClick={() => navToIndex(snapFor(c.i))}
+                onClick={() => goToStop(c.i)}
                 style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", borderRadius: 999, border: "1px solid #262c4f", background: "#0d1026", color: "#fff", padding: "7px 12px", fontFamily: MONO, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", textAlign: "left" }}
               >
                 <span style={{ display: "block", fontSize: 9, letterSpacing: "0.14em", color: "rgba(255,255,255,0.55)" }}>{c.year}</span>
@@ -223,6 +223,8 @@ function Phone({ state }: { state: string }) {
 
 /** Snap that shows stop i: one per stop on a laptop; on a phone the timeline is two screens, so the first half or the second. */
 const snapFor = (i: number) => (snapMapNow().mobile ? EXP_START_SNAP + (i >= 4 ? 1 : 0) : EXP_START_SNAP + i)
+
+const goToStop = (i: number) => (snapMapNow().mobile ? navToIndex(snapFor(i)) : scrollToStop(i))
 
 /** Chips for the college-era stops; each jumps to its station on the Experience map. */
 const CHIPS = ["Cloud Intern", "Research Asst.", "Teaching Asst.", "IEEE ICVR"].map(short => {
@@ -252,7 +254,7 @@ function Text({ align, state }: { align: "left" | "center"; state: string }) {
           {CHIPS.map(c => (
             <button
               key={c.label}
-              onClick={() => navToIndex(snapFor(c.i))}
+              onClick={() => goToStop(c.i)}
               className="rounded-full border border-[#262c4f] bg-[#0d1026] px-3 py-1.5 text-left text-white transition-colors hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-cyan-400"
               style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" }}
             >
