@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react"
 import { initJourney } from "./journey-core"
 import { DEMO_CARDS } from "./data"
 import { navToIndex } from "../../_hooks/scroll-nav"
-import { GATE_SNAP }  from "../../_hooks/snap-map"
+import { snapMapNow } from "../../_hooks/snap-map"
 import { trackProjectClick } from "../../_lib/analytics"
 
 // Gate and its projects follow the experience stage (see snap-map.ts)
@@ -24,8 +24,8 @@ export function JourneyScene() {
     // from project A to C flies directly — never chaining through B.
     let settleTimer: ReturnType<typeof setTimeout> | null = null
     function applyTarget() {
-      const idx = Math.round(window.scrollY / window.innerHeight)
-      api.setTarget(idx <= GATE_SNAP ? -1 : Math.min(idx - GATE_SNAP - 1, DEMO_CARDS.length - 1))
+      const idx = Math.round(window.scrollY / window.innerHeight), gate = snapMapNow().gate
+      api.setTarget(idx <= gate ? -1 : Math.min(idx - gate - 1, DEMO_CARDS.length - 1))
     }
     function onScroll() {
       if (settleTimer) clearTimeout(settleTimer)

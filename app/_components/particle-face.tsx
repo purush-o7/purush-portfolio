@@ -10,16 +10,16 @@ const FORM_DUR  = 3.2    // how long the current takes to settle into the portra
 const SPRING_K  = 0.048
 const DAMPING   = 0.80
 const REPEL_R   = 0.18
-const REPEL_F   = 0.06
+const REPEL_F   = 0      // no push: the cursor tints the portrait instead of parting it
 // Traveling wave along stroke direction
 const WAVE_SPEED = 1.1   // temporal frequency (rad/s)
 const WAVE_K     = 9.0   // spatial frequency
 const WAVE_AMP   = 0.014 // max wave displacement (scene units)
 // Cursor light — dots under the cursor take the site's cyan accent; the rest dims a touch
-const WARM_R   = 0.32            // radius of the light (scene units)
-const WARM_STR = 0.92            // max blend at centre
-const WARM_RGB = [0.13, 0.90, 0.94] as const  // cyan accent
-const DIM      = 0.80            // brightness of dots far from the cursor
+const WARM_R   = 0.34            // radius of the light (scene units)
+const WARM_STR = 1.0             // max blend at centre
+const WARM_RGB = [0.0, 0.55, 1.0] as const    // deep cyan (additive blending pushes pale tints toward white)
+const DIM      = 0.55            // brightness of dots far from the cursor
 
 // Loading current. While the data downloads the dots are already on screen, swirling in a current that roams the
 // whole page (wrapping at the screen edges). Nothing about it is stored or fixed: every load a random generator
@@ -263,7 +263,7 @@ function FaceParticles({ onReady, focus }: { onReady?: () => void; focus: Focus 
         pos[i3 + 2] += v[i3 + 2]
 
         // Cursor light: dim at rest, brighten and tint toward the accent as the cursor approaches
-        const near   = d < WARM_R ? (1 - d / WARM_R) : 0
+        const near   = d < WARM_R ? Math.min(1, (1 - d / WARM_R) / 0.45) : 0   // solid cyan core, soft edge
         const warmF  = near * WARM_STR
         const lit    = DIM + (1 - DIM) * near
         const br = oc[i3] * lit, bg = oc[i3 + 1] * lit, bb = oc[i3 + 2] * lit

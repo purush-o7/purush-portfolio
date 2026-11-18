@@ -1,9 +1,22 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { navSection }      from "../_hooks/scroll-nav"
+import { snapMapNow }      from "../_hooks/snap-map"
 import { trackNavArrow }   from "../_lib/analytics"
 
 export function SectionNav() {
+  // The arrows only make sense where scrolling is stepped (the journey and footer). Everywhere before that the
+  // page scrolls natively and freely, so they stay out of the way.
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const check = () => setShow(window.scrollY >= (snapMapNow().expEnd + 0.5) * window.innerHeight)
+    check()
+    window.addEventListener("scroll", check, { passive: true })
+    window.addEventListener("resize", check)
+    return () => { window.removeEventListener("scroll", check); window.removeEventListener("resize", check) }
+  }, [])
+  if (!show) return null
   return (
     <div data-section-nav style={{
       position:   "fixed",

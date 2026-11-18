@@ -19,7 +19,8 @@ export interface JourneyAPI {
 
 const MONO = "var(--font-geist-mono)"
 const DISP = "var(--font-heading)"
-import { GATE_SNAP } from "../../_hooks/snap-map"   // page snap index of the gateway
+import { snapMapNow } from "../../_hooks/snap-map"
+const GATE_SNAP = () => snapMapNow().gate   // page snap index of the gateway (device-dependent)
 
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
@@ -474,7 +475,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
   home.style.cssText = isMobile
     ? "width:20px;height:20px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#9fb0c8;cursor:pointer;font-size:10px;line-height:1;margin-bottom:2px;transition:border-color .2s,color .2s;"
     : "width:28px;height:28px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#9fb0c8;cursor:pointer;font-size:13px;line-height:1;flex-shrink:0;transition:border-color .2s,color .2s;"
-  home.onclick = () => { paintDots(-1); opts.navToSnap?.(GATE_SNAP) }   // nav acknowledges instantly
+  home.onclick = () => { paintDots(-1); opts.navToSnap?.(GATE_SNAP()) }   // nav acknowledges instantly
   addHudTip(home, "#8bf0ff", "⌂ · Gateway")
   home.addEventListener("pointerenter", () => { home.style.borderColor = "#8bf0ff"; home.style.color = "#8bf0ff" })
   home.addEventListener("pointerleave", () => { home.style.borderColor = "rgba(255,255,255,.25)"; home.style.color = "#9fb0c8" })
@@ -491,7 +492,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     const col = WEIGHT_COLORS[i]
     const b = document.createElement("button")
     b.setAttribute("aria-label", DEMO_CARDS[i].title)
-    b.onclick = () => { paintDots(i); opts.navToSnap?.(GATE_SNAP + 1 + i) }   // nav acknowledges instantly
+    b.onclick = () => { paintDots(i); opts.navToSnap?.(GATE_SNAP() + 1 + i) }   // nav acknowledges instantly
     if (isMobile) {
       // M4 — edge-rail dot
       b.style.cssText = "width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:transparent;cursor:pointer;padding:0;transition:all .3s;"
@@ -688,7 +689,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     ringBoost = Math.max(ringBoost, 1.7)
     preLaunchAt = performance.now()
     paintDots(0)
-    opts.navToSnap?.(GATE_SNAP + 1)
+    opts.navToSnap?.(GATE_SNAP() + 1)
   }
 
   // click = press + release without travel (≥8px means drag/swipe — never a click)
@@ -713,7 +714,7 @@ export function initJourney(container: HTMLElement, opts: JourneyOpts = {}): Jou
     if (Math.hypot(e.clientX - downX, e.clientY - downY) >= 8) return
     if (state !== "idle" && state !== "gate") return
     if (downWeight >= 0) {                                               // click/tap a mass → travel to it
-      paintDots(downWeight); opts.navToSnap?.(GATE_SNAP + 1 + downWeight)
+      paintDots(downWeight); opts.navToSnap?.(GATE_SNAP() + 1 + downWeight)
     } else if (state === "gate") {                                       // click/tap the gate → Omnitrix activation → enter
       activateGate()
     }

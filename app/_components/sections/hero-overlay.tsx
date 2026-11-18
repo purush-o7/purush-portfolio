@@ -120,12 +120,11 @@ export function HeroOverlay({ ready, mobile }: { ready: boolean; mobile: boolean
       {/* phone: the portrait runs full-screen; a dark fade keeps the text readable */}
       {mobile && <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, background: "linear-gradient(180deg, transparent 42%, rgba(7,7,15,0.9) 78%)" }} />}
 
-      {/* links — top-right on a laptop, bottom row on a phone */}
+      {/* links — top-right on a laptop (phone: above the name, below) */}
+      {!mobile && (
       <motion.nav
         initial="hide" animate={state} variants={rise} custom={1.3} aria-label="Elsewhere"
-        style={mobile
-          ? { position: "absolute", zIndex: 2, bottom: "calc(16px + env(safe-area-inset-bottom, 0px))", left: pad, right: 70, display: "flex", gap: 18, pointerEvents: "auto" }
-          : { position: "absolute", zIndex: 2, top: "clamp(24px, 4vw, 56px)", right: pad, display: "flex", gap: 24, pointerEvents: "auto" }}
+        style={{ position: "absolute", zIndex: 2, top: "clamp(24px, 4vw, 56px)", right: pad, display: "flex", gap: 24, pointerEvents: "auto" }}
       >
         {LINKS.map(l => (
           <a
@@ -139,9 +138,25 @@ export function HeroOverlay({ ready, mobile }: { ready: boolean; mobile: boolean
         ))}
       </motion.nav>
 
+      )}
+
       {/* name + role */}
       <motion.div style={{ position: "relative", zIndex: 1, x: exitX, opacity: exitO, paddingLeft: pad, paddingRight: pad, marginBottom: mobile ? 12 : "clamp(20px, 3.4vw, 44px)" }}>
         <motion.div initial="hide" animate={state} style={{ x: calm || mobile ? 0 : px, y: calm || mobile ? 0 : py }}>
+          {mobile && (
+            <motion.nav variants={rise} custom={0.2} aria-label="Elsewhere" style={{ display: "flex", gap: 18, marginBottom: 14, pointerEvents: "auto" }}>
+              {LINKS.map(l => (
+                <a
+                  key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
+                  onClick={() => { if (l.track) trackContactClick(l.track) }}
+                  className="text-white/70 underline decoration-white/25 underline-offset-[5px]"
+                  style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}
+                >
+                  {l.label}
+                </a>
+              ))}
+            </motion.nav>
+          )}
           <h1 style={{ fontFamily: HEAD, fontWeight: 700, lineHeight: 0.92, letterSpacing: "-0.045em", margin: 0, fontSize: mobile ? "clamp(34px, 12.6vw, 64px)" : "clamp(60px, 8.6vw, 156px)" }}>
             <Word text="PURUSHOTTAM" base={0} label="Purushottam" />
             <Word text="REDDY" base={11} outline label="Reddy" />
@@ -154,7 +169,7 @@ export function HeroOverlay({ ready, mobile }: { ready: boolean; mobile: boolean
 
       {/* phone: the facts drift past as a marquee, with the links beneath */}
       {mobile && (
-        <motion.div initial="hide" animate={state} variants={rise} custom={0.9} style={{ position: "relative", zIndex: 1, marginBottom: 58 }}>
+        <motion.div initial="hide" animate={state} variants={rise} custom={0.9} style={{ position: "relative", zIndex: 1, marginBottom: 24 }}>
           <Marquee items={FACTS.map(f => `${f.k} · ${f.v}`)} reduced={!!calm} />
         </motion.div>
       )}

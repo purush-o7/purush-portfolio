@@ -9,8 +9,8 @@ import {
 import { useScrollProgress } from "../../_hooks/use-scroll-progress"
 import { useMobile }         from "../../_hooks/use-mobile"
 import { navToIndex }        from "../../_hooks/scroll-nav"
-import { EXP_START_SNAP }    from "../../_hooks/snap-map"
-import { STOPS, LANES }      from "../experience/stops"
+import { EXP_START_SNAP, snapMapNow } from "../../_hooks/snap-map"
+import { STOPS }             from "../experience/stops"
 
 const HEAD = "var(--font-heading)"
 const MONO = "var(--font-geist-mono)"
@@ -78,13 +78,13 @@ export function EducationCard() {
       {/* campus drawing, faint… */}
       <Image
         src="/amrita-campus.png" alt="" fill sizes="100vw" priority
-        style={{ objectFit: "cover", objectPosition: "30% 40%", filter: "invert(1)", opacity: 0.12, pointerEvents: "none" }}
+        style={{ objectFit: "cover", objectPosition: mobile ? "50% 50%" : "30% 40%", filter: "invert(1)", opacity: 0.12, pointerEvents: "none" }}
       />
       {/* …and the same drawing lit cyan under the cursor */}
       <Image
         src="/amrita-campus.png" alt="" fill sizes="100vw" aria-hidden
         style={{
-          objectFit: "cover", objectPosition: "30% 40%", opacity: 0.5, pointerEvents: "none",
+          objectFit: "cover", objectPosition: mobile ? "50% 50%" : "30% 40%", opacity: 0.5, pointerEvents: "none",
           filter: "invert(1) sepia(1) hue-rotate(150deg) saturate(5) brightness(1.1)",
           WebkitMaskImage: mask, maskImage: mask,
         }}
@@ -108,11 +108,11 @@ function Laptop({ state }: { state: string }) {
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 
-/** Phone: swipe through three faces of the card (ID · CGPA · college timeline) and tilt the phone to tilt the card. */
+/** Phone: one big card on its lanyard (tilts with the phone; tap to flip), then the story and the college chips. */
 function Phone({ state }: { state: string }) {
   const calm = useReducedMotion()
-  const [idx, setIdx] = useState(0)
   const [tiltOn, setTiltOn] = useState(false)
+  const [flipped, setFlipped] = useState(false)
   const sway = useRef<HTMLDivElement>(null)
 
   const rx = useSpring(useMotionValue(0), { stiffness: 120, damping: 16 })
@@ -151,56 +151,67 @@ function Phone({ state }: { state: string }) {
   }, [calm])
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 70 }}>
+    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", padding: "0 20px calc(26px + env(safe-area-inset-bottom, 0px))" }}>
+      {/* lanyard + card */}
       <motion.div variants={dropV} initial="hide" animate={state} style={{ width: "100%" }}>
         <div ref={sway} style={{ transformOrigin: "50% -4px" }}>
-          <svg viewBox="0 0 30 110" preserveAspectRatio="none" aria-hidden style={{ display: "block", width: 22, height: 54, margin: "0 auto", overflow: "visible" }}>
+          <svg viewBox="0 0 30 110" preserveAspectRatio="none" aria-hidden style={{ display: "block", width: 24, height: "clamp(36px, 7vh, 64px)", margin: "0 auto", overflow: "visible" }}>
             <path d="M15 0 L15 110" fill="none" stroke="#233463" strokeWidth={22} />
             <path d="M15 0 L15 110" fill="none" stroke="#2f4478" strokeWidth={2} strokeDasharray="6 6" />
           </svg>
-          <div style={{ width: 30, height: 11, margin: "-4px auto 0", background: "#9aa3b8", borderRadius: "2px 2px 6px 6px", position: "relative", zIndex: 2 }} />
+          <div style={{ width: 32, height: 12, margin: "-4px auto 0", background: "#9aa3b8", borderRadius: "2px 2px 6px 6px", position: "relative", zIndex: 2 }} />
 
-          <motion.div style={{ rotateX: rx, rotateY: ry, transformPerspective: 800, transformStyle: "preserve-3d", marginTop: -4 }}>
-            <div
-              data-scroll-passthrough
-              onScroll={e => setIdx(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
-              style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", overscrollBehaviorX: "contain" }}
-            >
-              {[<Front key="f" sheenPos={sheenPos} hover={false} />, <Back key="b" flat />, <College key="c" />].map((face, i) => (
-                <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "center", display: "flex", justifyContent: "center", padding: "6px 0 18px" }}>
-                  <div style={{ width: 205, height: 320, position: "relative" }}>
-                    <div style={{ position: "absolute", left: 0, top: 0, width: 250, aspectRatio: "0.64", transform: "scale(0.82)", transformOrigin: "0 0" }}>{face}</div>
-                  </div>
-                </div>
-              ))}
+          <motion.div style={{ rotateX: rx, rotateY: ry, transformPerspective: 800, transformStyle: "preserve-3d", marginTop: -4, display: "flex", justifyContent: "center" }}>
+            {/* sizing wrapper: scales the card to fit, from its corner */}
+            <div style={{ width: 250 * 0.96, height: (250 / 0.64) * 0.96, position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, width: 250, height: 250 / 0.64, transform: "scale(0.96)", transformOrigin: "0 0" }}>
+                {/* the flipper turns around its own centre, so the card never swings off to the side */}
+                <motion.div
+                  onClick={() => setFlipped(f => !f)}
+                  animate={{ rotateY: flipped ? 180 : 0 }} transition={{ type: "spring", stiffness: 70, damping: 14 }}
+                  style={{ position: "relative", width: "100%", height: "100%", transformStyle: "preserve-3d" }}
+                >
+                  <Front sheenPos={sheenPos} hover={false} />
+                  <Back />
+                </motion.div>
+              </div>
             </div>
           </motion.div>
         </div>
       </motion.div>
 
-      <div role="tablist" aria-label="Card faces" style={{ display: "flex", gap: 6, marginTop: -6 }}>
-        {["ID", "CGPA", "College"].map((l, i) => (
-          <span key={l} aria-label={l} style={{ height: 6, width: i === idx ? 18 : 6, borderRadius: 3, background: i === idx ? "#22e5f0" : "#333a5e", transition: "all .25s" }} />
-        ))}
-      </div>
-
-      <motion.div variants={textV} initial="hide" animate={state} style={{ marginTop: 18, padding: "0 24px", textAlign: "center" }}>
+      {/* story + college chips */}
+      <motion.div variants={textV} initial="hide" animate={state} style={{ width: "100%", textAlign: "center" }}>
         <motion.p variants={riseV} style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.26em", textTransform: "uppercase", color: "#22e5f0", margin: 0 }}>
           Education · Class of 2024
         </motion.p>
-        <motion.h2 variants={riseV} style={{ fontFamily: HEAD, fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.02em", color: "#fff", margin: "10px 0 8px", fontSize: 28 }}>
+        <motion.h2 variants={riseV} style={{ fontFamily: HEAD, fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.02em", color: "#fff", margin: "10px 0 8px", fontSize: 30 }}>
           Amrita <span style={{ fontWeight: 300, color: "rgba(255,255,255,0.55)" }}>Vishwa Vidyapeetham</span>
         </motion.h2>
-        <motion.p variants={riseV} style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "rgba(255,255,255,0.64)", margin: 0 }}>
-          B.Tech in Computer Science &amp; Engineering
+        <motion.p variants={riseV} style={{ fontFamily: "var(--font-sans)", fontSize: 14.5, lineHeight: 1.5, color: "rgba(255,255,255,0.66)", margin: 0 }}>
+          B.Tech in Computer Science &amp; Engineering, Amritapuri, Kerala. CGPA 7.96 / 10.
         </motion.p>
-        <motion.p variants={riseV} style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", margin: "14px 0 0" }}>
-          Swipe the card
-        </motion.p>
+
+        <motion.div variants={riseV} style={{ marginTop: 18 }}>
+          <p style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", margin: "0 0 8px" }}>During college</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", paddingRight: 52 }}>
+            {CHIPS.map(c => (
+              <button
+                key={c.label}
+                onClick={() => navToIndex(snapFor(c.i))}
+                style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", borderRadius: 999, border: "1px solid #262c4f", background: "#0d1026", color: "#fff", padding: "7px 12px", fontFamily: MONO, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", textAlign: "left" }}
+              >
+                <span style={{ display: "block", fontSize: 9, letterSpacing: "0.14em", color: "rgba(255,255,255,0.55)" }}>{c.year}</span>
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
         {needsPerm && !tiltOn && !calm && (
           <button
             onClick={enableTilt}
-            style={{ marginTop: 10, border: "1px solid #22e5f0", color: "#22e5f0", borderRadius: 999, padding: "7px 16px", background: "transparent", fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase" }}
+            style={{ marginTop: 14, border: "1px solid #22e5f0", color: "#22e5f0", borderRadius: 999, padding: "7px 16px", background: "transparent", fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase" }}
           >
             Enable tilt
           </button>
@@ -210,30 +221,8 @@ function Phone({ state }: { state: string }) {
   )
 }
 
-/** Third face of the card — the college-era stops; each row jumps to its station on the Experience map. */
-function College() {
-  return (
-    <div style={face}>
-      <div style={{ padding: "12px 16px", background: "linear-gradient(120deg,#12306a,#0b1d44)", fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#cfe0ff" }}>
-        During college
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", padding: "8px 12px 14px", flex: 1, justifyContent: "space-evenly" }}>
-        {CHIPS.map(c => (
-          <button
-            key={c.label}
-            onClick={() => navToIndex(EXP_START_SNAP + c.i)}
-            style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 12, padding: "9px 6px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
-          >
-            <i aria-hidden style={{ width: 9, height: 9, borderRadius: "50%", border: `2px solid ${LANES[STOPS[c.i].lane].color}`, flexShrink: 0 }} />
-            <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.12em", color: "rgba(255,255,255,0.62)", width: 34 }}>{c.year}</span>
-            <span style={{ fontFamily: HEAD, fontWeight: 500, fontSize: 15, color: "#fff", flex: 1 }}>{c.label}</span>
-            <span aria-hidden style={{ color: "rgba(255,255,255,0.4)" }}>→</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
+/** Snap that shows stop i: one per stop on a laptop; on a phone the timeline is two screens, so the first half or the second. */
+const snapFor = (i: number) => (snapMapNow().mobile ? EXP_START_SNAP + (i >= 4 ? 1 : 0) : EXP_START_SNAP + i)
 
 /** Chips for the college-era stops; each jumps to its station on the Experience map. */
 const CHIPS = ["Cloud Intern", "Research Asst.", "Teaching Asst.", "IEEE ICVR"].map(short => {
@@ -263,7 +252,7 @@ function Text({ align, state }: { align: "left" | "center"; state: string }) {
           {CHIPS.map(c => (
             <button
               key={c.label}
-              onClick={() => navToIndex(EXP_START_SNAP + c.i)}
+              onClick={() => navToIndex(snapFor(c.i))}
               className="rounded-full border border-[#262c4f] bg-[#0d1026] px-3 py-1.5 text-left text-white transition-colors hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-cyan-400"
               style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" }}
             >
@@ -459,10 +448,10 @@ function Front({ sheenPos, hover }: { sheenPos: ReturnType<typeof useTransform<n
   )
 }
 
-function Back({ flat = false }: { flat?: boolean }) {
+function Back() {
   const lab: React.CSSProperties = { fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.66)" }
   return (
-    <div style={{ ...face, transform: flat ? undefined : "rotateY(180deg)", padding: 18, gap: 14 }}>
+    <div style={{ ...face, transform: "rotateY(180deg)", padding: 18, gap: 14 }}>
       <div>
         <div style={lab}>CGPA</div>
         <div style={{ fontFamily: HEAD, fontWeight: 700, fontSize: 54, lineHeight: 1, letterSpacing: "-0.03em", color: "#fff" }}>

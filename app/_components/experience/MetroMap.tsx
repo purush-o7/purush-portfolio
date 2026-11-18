@@ -4,7 +4,7 @@ import { LANES, STOPS, MONTHS, T_START, type Today } from "./stops"
 import { MONO } from "./RoleContent"
 
 const HEAD = "var(--font-heading)"
-const W = 360, H = 540
+const W = 360
 const AX = 40                          // ruler x
 const LX = (l: number) => 94 + l * 27  // lane x
 const LABEL_X = 232
@@ -14,7 +14,16 @@ const LABEL_X = 232
  * the current month); each line is a track; each stop is a numbered station. Stops after the current
  * one are dimmed, so scrolling "walks" the line.
  */
-export function MetroMap({ sel, onSel, today }: { sel: number; onSel: (i: number) => void; today: Today }) {
+/** y of each stop's station in the map's own coordinates, for a given height (so a parent can tell which stop is nearest). */
+export function stopYs(H: number, today: Today): number[] {
+  const span = today.end - T_START
+  return STOPS.map(s => 20 + ((s.from - T_START) / span) * (H - 40))
+}
+
+export function MetroMap({ sel, onSel, today, H = 540, gap = 38, big = false, dimFuture = true }: {
+  sel: number; onSel: (i: number) => void; today: Today
+  H?: number; gap?: number; big?: boolean; dimFuture?: boolean      // tall mode: more room between labels, larger type
+}) {
   const span = today.end - T_START
   const tp   = (t: number) => 20 + ((t - T_START) / span) * (H - 40)
   const n    = STOPS.length
@@ -23,9 +32,9 @@ export function MetroMap({ sel, onSel, today }: { sel: number; onSel: (i: number
   const labelY: number[] = []
   const order = STOPS.map((_, i) => i).sort((a, b) => tp(STOPS[a].from) - tp(STOPS[b].from))
   let prev = -99
-  order.forEach(i => { const y = Math.max(tp(STOPS[i].from), prev + 38); labelY[i] = y; prev = y })
+  order.forEach(i => { const y = Math.max(tp(STOPS[i].from), prev + gap); labelY[i] = y; prev = y })
   const over = labelY[order[n - 1]] - (H - 14)
-  if (over > 0) for (let k = n - 1, lim = H - 14; k >= 0; k--) { labelY[order[k]] = Math.min(labelY[order[k]], lim); lim = labelY[order[k]] - 38 }
+  if (over > 0) for (let k = n - 1, lim = H - 14; k >= 0; k--) { labelY[order[k]] = Math.min(labelY[order[k]], lim); lim = labelY[order[k]] - gap }
 
   const ticks: React.ReactNode[] = []
   for (let y = T_START; y <= Math.ceil(today.end); y++) {
@@ -74,13 +83,13 @@ export function MetroMap({ sel, onSel, today }: { sel: number; onSel: (i: number
       {/* stint bars */}
       {STOPS.map((s, i) => end(s) > s.from && (
         <line key={i} x1={LX(s.lane)} y1={tp(s.from)} x2={LX(s.lane)} y2={tp(end(s))} stroke={LANES[s.lane].color} strokeWidth={7} strokeLinecap="round"
-          opacity={i <= sel ? 1 : 0.35} style={{ transition: "opacity .3s" }} />
+          opacity={!dimFuture || i <= sel ? 1 : 0.35} style={{ transition: "opacity .3s" }} />
       ))}
 
       {/* stations */}
       {STOPS.map((s, i) => {
         const x = LX(s.lane), y = tp(s.from), c = LANES[s.lane].color
-        const on = i === sel, reached = i <= sel
+        const on = i === sel, reached = !dimFuture || i <= sel
         return (
           <g
             key={i} role="button" tabIndex={0} aria-label={`${i + 1}. ${s.title}, ${s.period}`} aria-current={on ? "step" : undefined}
@@ -92,8 +101,8 @@ export function MetroMap({ sel, onSel, today }: { sel: number; onSel: (i: number
             {on && <circle cx={x} cy={y} r={11} fill="none" stroke={c} strokeWidth={2} style={{ animation: "mm-pulse 1.8s ease-out infinite" }} />}
             <circle cx={x} cy={y} r={12} fill={on ? c : "#07070f"} stroke={c} strokeWidth={3} />
             <text x={x} y={y + 4} textAnchor="middle" fill={on ? "#06121a" : "#fff"} style={{ font: `700 11px ${MONO}` }}>{i + 1}</text>
-            <text x={LABEL_X} y={labelY[i] - 1} fill={on ? "#fff" : "#c9cfe3"} style={{ font: `${on ? 700 : 600} 15px ${HEAD}` }}>{s.short}</text>
-            <text x={LABEL_X} y={labelY[i] + 14} fill="#a0a7c0" style={{ font: `500 11.5px ${MONO}` }}>{s.when}</text>
+            <text x={LABEL_X} y={labelY[i] - 1} fill={on ? "#fff" : "#c9cfe3"} style={{ font: `${on ? 700 : 600} ${big ? 17 : 15}px ${HEAD}` }}>{s.short}</text>
+            <text x={LABEL_X} y={labelY[i] + (big ? 16 : 14)} fill="#a0a7c0" style={{ font: `500 ${big ? 13 : 11.5}px ${MONO}` }}>{s.when}</text>
             <circle cx={x} cy={y} r={20} fill="transparent" />
             <rect x={LABEL_X - 4} y={labelY[i] - 17} width={122} height={36} fill="transparent" />
           </g>

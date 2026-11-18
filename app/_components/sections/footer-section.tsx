@@ -5,6 +5,7 @@ import { motion }                   from "framer-motion"
 import { useState, useRef, useEffect } from "react"
 import { useScrollProgress }          from "../../_hooks/use-scroll-progress"
 import { useMobile }                  from "../../_hooks/use-mobile"
+import { useSnapMap } from "../../_hooks/snap-map"
 import { trackContactClick }          from "../../_lib/analytics"
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -178,14 +179,13 @@ function GridPanel({ isMobile }: { isMobile: boolean }) {
 
 // ── Section ───────────────────────────────────────────────────────────────────
 
-interface Props { triggerVh: number }
-
-export function FooterSection({ triggerVh }: Props) {
+export function FooterSection() {
   const isMobile = useMobile()
+  const { total } = useSnapMap()
 
   const p = useScrollProgress(
     typeof window !== "undefined" ? window.innerHeight : 800,
-    typeof window !== "undefined" ? (triggerVh - 1) * window.innerHeight : 99999,
+    typeof window !== "undefined" ? (total - 2) * window.innerHeight : 99999,
   )
 
   return (

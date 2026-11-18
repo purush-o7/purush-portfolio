@@ -64,7 +64,7 @@ export function SkillsSection() {
       padding:    isMobile ? "10px" : "16px",
     }}>
 
-      {!isMobile && <AmoebaBg />}   {/* the moving background is laptop-only */}
+      <AmoebaBg />
 
       <div style={{
         position: "relative", height: "100%",

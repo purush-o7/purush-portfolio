@@ -1,70 +1,68 @@
 "use client"
 
-import { memo } from "react"
-
-import { useState }           from "react"
-import { navToIndex }         from "../../_hooks/scroll-nav"
-import { ALL_ENTRIES }        from "./data"
+import { memo, useCallback, useEffect, useRef, useState } from "react"
 import { MONO }               from "./RoleContent"
-import { RoleSheet }          from "./RoleSheet"
-import { MetroMap, LaneKey }  from "./MetroMap"
+import { MetroMap, LaneKey, stopYs } from "./MetroMap"
+import { StopSheet }          from "./StopSheet"
 import { STOPS, LANES, useToday } from "./stops"
-import { StatusPill }     from "./StopPage"
-import { EXP_START_SNAP, useExpProgress } from "./use-exp-progress"
-
-const N = STOPS.length
+import { useExpProgress }     from "./use-exp-progress"
 
 /**
- * Phone layout. The metro map fills the screen and follows the scroll ("walk the line"); tap a
- * station to jump. A card at the bottom summarises the current stop; "Full details" opens the shadcn drawer.
+ * Phone layout. The whole page IS the timeline: one tall metro map on a real time scale that scrolls like any
+ * other page (it is exactly two screens of scroll, moved 1:1 with your finger). Tap a station for the full story
+ * in a bottom sheet. When you reach the end, the page moves on.
  */
 function ExperiencePhoneImpl() {
-  const [active, setActive] = useState(0)
   const [open,   setOpen]   = useState<number | null>(null)
-  const today = useToday()
+  const [active, setActive] = useState(0)
+  const [dims,   setDims]   = useState({ vh: 800, w: 362 })
+  const today   = useToday()
+  const trackRef = useRef<HTMLDivElement>(null)
+  const boxRef   = useRef<HTMLDivElement>(null)
 
-  useExpProgress(cp => setActive(Math.round(cp)))
+  // content is exactly two screens tall, so the scroll distance (one screen) matches the content overflow 1:1
+  useEffect(() => {
+    const fit = () => setDims({ vh: window.innerHeight, w: boxRef.current?.clientWidth ?? window.innerWidth - 28 })
+    fit()
+    window.addEventListener("resize", fit)
+    return () => window.removeEventListener("resize", fit)
+  }, [])
+  const H  = dims.vh * 2
+  const vbH = Math.round(H * (360 / dims.w))                  // svg height in its own units
 
-  const s      = STOPS[active]
-  const entry  = s.entry !== undefined ? ALL_ENTRIES[s.entry] : null
-  const accent = LANES[s.lane].color
+  const apply = useCallback((cp: number) => {
+    if (trackRef.current) trackRef.current.style.transform = `translate3d(0, ${-(cp * dims.vh).toFixed(1)}px, 0)`
+    // highlight the stop nearest the middle of the screen
+    const mid = ((cp * dims.vh) + dims.vh * 0.5) * (360 / dims.w)
+    const ys = stopYs(vbH, today)
+    let best = 0
+    ys.forEach((y, i) => { if (Math.abs(y - mid) < Math.abs(ys[best] - mid)) best = i })
+    setActive(a => (a === best ? a : best))
+  }, [dims, vbH, today])
+  useExpProgress(apply)
+
+  const accent = LANES[STOPS[active].lane].color
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: "#07070f", overflow: "hidden", display: "flex", flexDirection: "column", padding: "calc(14px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px))" }}>
-      <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(ellipse 120% 40% at 0% 0%, ${accent}26 0%, transparent 70%)`, transition: "background 0.6s ease" }} />
+    <div style={{ position: "absolute", inset: 0, background: "#07070f", overflow: "hidden" }}>
+      <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(ellipse 120% 30% at 0% 0%, ${accent}22 0%, transparent 70%)`, transition: "background 0.6s ease", zIndex: 0 }} />
 
-      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: accent, transition: "color 0.4s" }}>Experience</span>
-        <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", color: "rgba(255,255,255,0.45)" }}>{String(active + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}</span>
-      </div>
-      <p style={{ position: "relative", fontFamily: "var(--font-sans)", fontSize: 12.5, color: "rgba(255,255,255,0.5)", margin: "4px 0 0" }}>
-        Swipe up to walk the line, or tap a station.
-      </p>
-
-      <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-        <MetroMap sel={active} today={today} onSel={i => navToIndex(EXP_START_SNAP + i)} />
-      </div>
-
-      <div style={{ position: "relative", marginBottom: 8 }}><LaneKey /></div>
-
-      {/* current stop */}
-      <div key={active} style={{ position: "relative", marginRight: 56, background: "#0d1026", border: "1px solid #262c4f", borderLeft: `3px solid ${accent}`, borderRadius: 10, padding: "12px 14px", animation: "ex-in .3s ease" }}>
-        <style>{`@keyframes ex-in{from{opacity:0;transform:translateY(6px)}} @media (prefers-reduced-motion:reduce){*{animation:none!important}}`}</style>
-        <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-          <span style={{ color: accent }}>{LANES[s.lane].name}</span><span style={{ color: "rgba(255,255,255,0.4)" }}> · {s.period}</span><StatusPill stop={s} />
+      <div ref={trackRef} style={{ position: "absolute", top: 0, left: 14, right: 14, height: H, willChange: "transform" }}>
+        <div ref={boxRef} style={{ position: "absolute", inset: 0, paddingTop: "calc(76px + env(safe-area-inset-top, 0px))", boxSizing: "border-box" }}>
+          <MetroMap sel={active} today={today} onSel={setOpen} H={vbH} gap={50} big dimFuture={false} />
         </div>
-        <div style={{ fontFamily: "var(--font-heading)", fontSize: 18, fontWeight: 600, color: "#fff", lineHeight: 1.2, margin: "5px 0 2px" }}>{s.title}</div>
-        {s.steps && <div style={{ fontFamily: MONO, fontSize: 10.5, color: "rgba(255,255,255,0.6)", marginBottom: 3 }}>{s.steps.join(" → ")}</div>}
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, lineHeight: 1.45, color: "rgba(255,255,255,0.7)" }}>{s.line}</div>
-        {entry && (
-          <button onClick={() => setOpen(s.entry!)} style={{
-            all: "unset", cursor: "pointer", marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, minHeight: 32,
-            fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: accent,
-          }}>Full details →</button>
-        )}
       </div>
 
-      {open !== null && <RoleSheet entry={ALL_ENTRIES[open]} onClose={() => setOpen(null)} />}
+      {/* header — stays put while the timeline scrolls under it */}
+      <div style={{ position: "absolute", left: 0, right: 0, top: 0, zIndex: 3, padding: "calc(12px + env(safe-area-inset-top, 0px)) 16px 10px", background: "linear-gradient(180deg, #07070f 70%, rgba(7,7,15,0))", pointerEvents: "none" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: accent, transition: "color .4s" }}>Experience</span>
+          <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>Tap a stop</span>
+        </div>
+        <div style={{ marginTop: 6 }}><LaneKey /></div>
+      </div>
+
+      {open !== null && <StopSheet stop={STOPS[open]} onClose={() => setOpen(null)} />}
     </div>
   )
 }

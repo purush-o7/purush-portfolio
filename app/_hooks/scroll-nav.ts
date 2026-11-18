@@ -2,10 +2,10 @@
 
 // Section start snap indices — must match page.tsx scroll positions
 // Each index = the snap where the section is FULLY visible
-import { SNAP_EDU, SNAP_PROJECTS, SNAP_SKILLS, EXP_START_SNAP, GATE_SNAP } from "./snap-map"
+import { snapMapNow } from "./snap-map"
 
-// Hero, Education, Projects, Skills, Experience, Journey gateway, Footer (footer = last snap)
-export const SECTION_STARTS = [0, SNAP_EDU, SNAP_PROJECTS, SNAP_SKILLS, EXP_START_SNAP, GATE_SNAP, GATE_SNAP + 8]
+/** Section start snaps for this device: hero, education, projects, skills, experience, journey gate, footer. */
+export const sectionStarts = () => snapMapNow().starts
 
 let _goTo:      ((idx: number) => void) | null = null
 let _getCurrent: (() => number) | null         = null
@@ -28,10 +28,10 @@ export function navSection(dir: 1 | -1) {
   const cur = _getCurrent()
 
   if (dir > 0) {
-    const next = SECTION_STARTS.find(s => s > cur)
+    const next = sectionStarts().find(s => s > cur)
     if (next !== undefined) _goTo(next)
   } else {
-    const prev = [...SECTION_STARTS].reverse().find(s => s < cur)
+    const prev = [...sectionStarts()].reverse().find(s => s < cur)
     if (prev !== undefined) _goTo(prev)
   }
 }

@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { registerNav, SECTION_STARTS } from "./scroll-nav"
-import { EXP_START_SNAP, EXP_END_SNAP } from "./snap-map"
+import { registerNav, sectionStarts } from "./scroll-nav"
+import { EXP_START_SNAP, snapMapNow } from "./snap-map"
 import { trackSectionView }            from "../_lib/analytics"
 
 const ANIM_MS        = 900   // snap animation duration (ms)
@@ -17,7 +17,7 @@ const WHEEL_GAP_MS   = 220   // wheel silence that separates one gesture from th
 // (Projects, Skills and every experience stop slide in 1:1 with the wheel or finger) instead of stepping.
 // The edges still hand off to the snap engine.
 const FREE_FROM      = 0
-const FREE_TO        = EXP_END_SNAP
+const freeTo          = () => snapMapNow().expEnd   // last experience snap (device-dependent)
 // Between Education and the start of Experience each section needs a full-screen rest: if the user stops
 // part-way through a slide-over, ease to the nearest one (a gentle settle, not a controlled step).
 const SETTLE_TO      = EXP_START_SNAP
@@ -111,7 +111,7 @@ export function useScrollSnap(sections: number) {
     //   interior of the stage → yes; at its first role → only downwards; at its last → only upwards.
     function freeFor(dir: 1 | -1): boolean {
       if (rafRef.current !== null || locked.current) return false
-      const y = window.scrollY, a = FREE_FROM * vh(), b = FREE_TO * vh()
+      const y = window.scrollY, a = FREE_FROM * vh(), b = freeTo() * vh()
       if (y > a + 2 && y < b - 2) return true
       if (Math.abs(y - a) <= 2)   return dir > 0
       if (Math.abs(y - b) <= 2)   return dir < 0
@@ -142,8 +142,9 @@ export function useScrollSnap(sections: number) {
 
     const SECTION_NAMES = ["Hero", "Education", "Projects", "Skills", "Experience", "Journey", "Footer"]
     function onSectionChange(idx: number) {
-      const si = [...SECTION_STARTS].reverse().findIndex(s => idx >= s)
-      const name = SECTION_NAMES[SECTION_STARTS.length - 1 - si]
+      const starts = sectionStarts()
+      const si = [...starts].reverse().findIndex(s => idx >= s)
+      const name = SECTION_NAMES[starts.length - 1 - si]
       if (name) trackSectionView(name)
     }
 
@@ -174,7 +175,7 @@ export function useScrollSnap(sections: number) {
         if (isNewGesture) { syncCurrent(); freeGesture.current = freeFor(dir) }
         if (freeGesture.current) {
           const y = window.scrollY
-          const atEdge = (dir > 0 && y >= FREE_TO * vh() - 1) || (dir < 0 && y <= FREE_FROM * vh() + 1)
+          const atEdge = (dir > 0 && y >= freeTo() * vh() - 1) || (dir < 0 && y <= FREE_FROM * vh() + 1)
           if (atEdge) { e.preventDefault(); return }
 
           // Over a scrolling panel (Skills editor / terminal / chat): the panel scrolls natively while it has room.
@@ -325,7 +326,7 @@ export function useScrollSnap(sections: number) {
       const now = performance.now()
       if (rafRef.current === null) scheduleSettle()
       if (now > freeUntil.current || rafRef.current !== null) return
-      const y = window.scrollY, a = FREE_FROM * vh(), b = FREE_TO * vh()
+      const y = window.scrollY, a = FREE_FROM * vh(), b = freeTo() * vh()
       if (y > b)      window.scrollTo(0, b)
       else if (y < a) window.scrollTo(0, a)
       else            freeUntil.current = now + FREE_TAIL_MS

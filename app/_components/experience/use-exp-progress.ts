@@ -2,11 +2,9 @@
 
 import { useEffect, useRef } from "react"
 
-import { EXP_START_SNAP, EXP_STOPS } from "../../_hooks/snap-map"
+import { EXP_START_SNAP, snapMapNow } from "../../_hooks/snap-map"
 export { EXP_START_SNAP }
 
-/** Number of stops on the experience line (metro stations). */
-export const EXP_COUNT = EXP_STOPS
 
 /** Year the role started, e.g. "Mar 2024 – Jan 2026" → "2024". */
 export function startYear(period: string): string {
@@ -27,7 +25,7 @@ export function useExpProgress(onChange: (cp: number) => void) {
 
     function read() {
       const h = window.innerHeight
-      return Math.max(0, Math.min((window.scrollY - EXP_START_SNAP * h) / h, EXP_COUNT - 1))
+      return Math.max(0, Math.min((window.scrollY - EXP_START_SNAP * h) / h, snapMapNow().expStops - 1))
     }
     function frame() { raf = 0; cb.current(read()) }
     function schedule() { if (!raf) raf = requestAnimationFrame(frame) }
