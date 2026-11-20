@@ -7,7 +7,7 @@ import { ExperiencePhone }   from "./ExperiencePhone"
 import { EXP_START_SNAP, useSnapMap } from "../../_hooks/snap-map"
 
 // Experience owns one snap per stop on the metro line (see snap-map.ts). The shell reveals it just before
-// its first snap (as Skills slides off) and lifts it away over the last snap when the Journey gateway takes over.
+// its first snap (as Skills slides off) and lifts it away over the last snap when the projects reel takes over.
 // Laptop: metro map + stop pages. Phone: full-screen metro map + stop card + drawer.
 export function ExperienceSection() {
   const { width } = useViewport()

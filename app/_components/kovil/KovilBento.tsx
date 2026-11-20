@@ -154,7 +154,6 @@ function KovilBentoImpl({ onPhoto }: { onPhoto: (i: number) => void }) {
 
         {/* Gallery strip */}
         <div
-          data-no-scroll-snap="true"
           onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
           style={{ ...tile, gridArea: "gallery", padding: 0 }}
         >

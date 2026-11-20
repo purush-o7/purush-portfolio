@@ -131,6 +131,6 @@
 
 .canvas-no-touch { touch-action: none; }
 
-/* Hide scrollbar everywhere — navigation is via scroll-snap or SectionNav */
+/* Hide scrollbar everywhere — the page scrolls natively */
 *                         { scrollbar-width: none; -ms-overflow-style: none; }
 *::-webkit-scrollbar      { display: none; }

@@ -3,17 +3,15 @@ import { EducationCard }      from "./_components/sections/education-card"
 import { ProjectsSection }    from "./_components/sections/projects-section"
 import { ExperienceSection }  from "./_components/experience"
 import { SkillsSection }      from "./_components/skills"
-import { JourneySection }     from "./_components/sections/journey-section"
+import { ProjectsReel }       from "./_components/projects/ProjectsReel"
 import { FooterSection }      from "./_components/sections/footer-section"
-import { ScrollSnap }         from "./_components/scroll-snap"
-import { SectionNav }         from "./_components/section-nav"
+import { PageScroll }         from "./_components/page-scroll"
 
 export default function Home() {
   return (
     <div className="bg-[#07070f]">
 
-      <ScrollSnap />   {/* also renders the scroll spacers: one 100vh block per snap */}
-      <SectionNav />
+      <PageScroll />   {/* the scroll budget: one 100vh spacer per screen. Scrolling is fully native. */}
 
       {/* ── Education (ID card) — revealed as the hero lifts; Projects slide over it ── */}
       <EducationCard />
@@ -30,8 +28,8 @@ export default function Home() {
       {/* ── Experience — metro line, one snap per stop ─────────────────── */}
       <ExperienceSection />
 
-      {/* ── Journey (gravity wells + wormhole) — revealed as Experience leaves ── */}
-      <JourneySection />
+      {/* ── Projects reel — the clips slide sideways while the page scrolls; revealed as Experience leaves ── */}
+      <ProjectsReel />
 
       {/* ── Footer — peacock canvas + contact, last snap ─────────────────── */}
       <FooterSection />

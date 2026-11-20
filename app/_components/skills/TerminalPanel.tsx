@@ -131,7 +131,7 @@ function TerminalPanelImpl({ active, onComplete, compact = false }: Props) {
       </div>
 
       {/* ── Content ─────────────────────────────────────────────────────── */}
-      <div data-scroll-passthrough style={{ flex: 1, overflow: "auto", overscrollBehavior: "contain", padding: compact ? "8px 12px" : "10px 14px" }}>
+      <div style={{ flex: 1, overflow: "auto", padding: compact ? "8px 12px" : "10px 14px" }}>
 
         {activeTab === "TERMINAL" && (
           <>

@@ -153,10 +153,9 @@ function KovilChaptersImpl({ onPhoto }: { onPhoto: (i: number) => void }) {
         <div
           ref={rowRef}
           onScroll={() => { if (!moved && (rowRef.current?.scrollLeft ?? 0) > 8) setMoved(true); onScroll() }}
-          data-scroll-passthrough
           style={{
             display: "flex", gap: CARD_GAP, overflowX: "auto", scrollSnapType: "x mandatory",
-            padding: "14px 16px 0", scrollPaddingLeft: 16, touchAction: "pan-x", overscrollBehavior: "contain", scrollbarWidth: "none",
+            padding: "14px 16px 0", scrollPaddingLeft: 16, touchAction: "pan-x pan-y", scrollbarWidth: "none",
           }}
         >
           {/* 1 · Intro */}

@@ -64,7 +64,7 @@ function MobileSkillsImpl({ chatVersion, onClear }: Props) {
               Explorer · purush-portfolio
             </div>
 
-            <div data-scroll-passthrough style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain" }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
               {SKILL_CATEGORIES.map((c, i) => {
                 const isOpen = open === i
                 return (

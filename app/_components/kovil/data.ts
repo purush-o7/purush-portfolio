@@ -36,7 +36,7 @@ export const SRC = {
 
 /**
  * Called when the visitor opens the 3D explorer. Leaves a note so the home page
- * lands back on this section when they come back (read in use-scroll-snap.ts).
+ * lands back on this section when they come back (read in use-page-scroll.ts).
  */
 export function openExplorer() {
   try { sessionStorage.setItem("snap:restore", String(KOVIL_SNAP)) } catch { /* private mode */ }

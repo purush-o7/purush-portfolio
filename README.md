@@ -8,7 +8,7 @@ A portfolio that took longer to build than some production systems I've shipped.
 
 ## What's inside
 
-A scroll-snapped, section-by-section journey through the stack, experience, and projects of a full-stack + ML engineer. Each section has its own visual concept — no two look the same.
+A natively scrolling, section-by-section journey through the stack, experience, and projects of a full-stack + ML engineer. Each section has its own visual concept — no two look the same.
 
 | Section | What it does |
 |---|---|
@@ -39,15 +39,13 @@ A scroll-snapped, section-by-section journey through the stack, experience, and 
 
 ## Noteworthy implementation details
 
-**Scroll snap** — custom RAF-based snap engine (no CSS scroll-snap). Handles wheel, touch, and keyboard with easing curves and a lock/unlock cycle to prevent double-advances.
-
-**Scroll passthrough** — terminal, chat, and experience content panels capture wheel events when they have content to scroll. Handoff is **gesture-scoped**, identical on wheel and touch: a gesture that starts mid-content only ever scrolls the content to its end (the rest of the gesture — including trackpad momentum — is absorbed); only a gesture that *starts* with the content already ended advances the section. Wheel gestures are segmented by ~220ms of silence or a direction flip; touch gestures by the finger lifting. Add `data-scroll-passthrough` to any new scrollable container and it gets this behaviour for free.
+**Native scrolling** — nothing steps, snaps or intercepts the wheel, touch or keyboard. The page is a stack of `position: fixed` layers moved by `window.scrollY`, over spacer divs whose count (`_hooks/snap-map.ts`) is derived from the content: the phone Experience timeline, the laptop Experience column and the projects reel each measure themselves and report their length. `use-page-scroll.ts` only restores the position when you come back from `/kovil-lens` and reports the current section to analytics. Scrollable panels inside a section (Skills editor / terminal / chat) are plain `overflow: auto` boxes.
 
 **Particle face** — 7,000 points loaded from a pre-generated JSON file. Each particle has position, colour, and stroke-direction for a traveling wave animation. Mouse proximity creates a warm amber glow; the repulsion ring is mapped to the canvas element bounds (not the window) so it tracks correctly regardless of layout.
 
 **Skills section** — a VS Code mimic with real interactive parts. The terminal `PROBLEMS` tab has humorous self-aware diagnostics (`caffeine_intake: "critical"`, `work_life_balance: undefined`). The chat is FAQ-driven with Framer Motion shared-element transitions — pills physically travel to become message bubbles. The amoeba border uses an SVG `feGaussianBlur` + `feColorMatrix` goo filter on multiple radial-gradient blobs that follow the cursor.
 
-**Experience** — keeps one snap per role (5–9). `use-exp-progress.ts` turns `scrollY` into a continuous role position and the layouts write it straight to DOM styles (no React renders in the hot path). Laptop (`ExperienceSplit`): fixed role index on the left, role pages sliding on the right, each page scrolling its own content. Phone (`ExperienceSpine`): a glowing spine that fills as you advance; tapping a card opens `RoleSheet`, a two-stop bottom sheet (`data-no-scroll-snap` keeps the page engine out of it).
+**Experience** — `use-exp-progress.ts` turns `scrollY` into a continuous role position and the layouts write it straight to DOM styles (no React renders in the hot path). Laptop (`ExperienceSplit`): fixed role index on the left, role pages sliding on the right, each page scrolling its own content. Phone (`ExperienceSpine`): a glowing spine that fills as you advance; tapping a card opens `RoleSheet`, a two-stop bottom sheet.
 
 ---
 
@@ -82,8 +80,9 @@ app/
 ├── kovil-lens/          # Full-space 3D explorer route (layout + page)
 │   └── particle-face    # 7k-point particle portrait
 ├── _hooks/
-│   ├── use-scroll-snap  # Custom scroll snap engine
-│   └── scroll-nav       # Section navigation bridge
+│   ├── use-page-scroll  # Restore-on-return + section analytics (scrolling is native)
+│   ├── snap-map         # Device- and content-aware scroll budget
+│   └── scroll-nav       # Smooth jump helper
 ├── _lib/
 │   └── analytics        # Typed GA4 event helpers
 └── page.tsx             # Section layout + scroll budget
@@ -93,12 +92,12 @@ app/
 
 ## Notes for contributors (or future me at 2am)
 
-- Adding new scrollable content inside a section? Put `data-scroll-passthrough` on the container. The snap hook handles the boundary handoff automatically.
+- Adding scrollable content inside a section? Just use `overflow: auto`; do **not** set `overscroll-behavior: contain` (it would trap the wheel at the panel's end) or `touch-action: pan-x` alone (it blocks vertical swipes).
 - All sections are `position: fixed`, layered by z-index, and slide via `translateY` driven by `window.scrollY`. The "page" is just spacer divs — total height = `SECTIONS × 100vh`.
 - **Skills window:** the desktop Skills section is a VS Code window — title bar, activity bar, minimap and status bar use the real VS Code icons (`@vscode/codicons`, wrapped by `skills/Codicon.tsx`); the chat is set in the sans font for readability. The phone layout is unchanged.
-- **Free-scroll stage:** the Experience roles (snaps 5–9) scroll natively instead of stepping — `FREE_FROM/FREE_TO` in `use-scroll-snap.ts`. A gesture that starts inside the stage stays free and is clamped at the edges; the next gesture at an edge hands back to the snap engine. `use-exp-progress.ts` smooths the role position so it glides.
+- **Scroll length:** each measured stage (Experience, projects reel) calls `setLaptopExpStops` / `setReelSnaps` in `snap-map.ts` so the page is exactly as long as its content needs.
 - **Phone role sheet:** `RoleSheet` is the shadcn `Drawer` (vaul, `components/ui/drawer.tsx`) with 60% / full snap points; `noBodyStyles` keeps vaul from fixing the body (which would reset `scrollY`).
-- **Returning from `/kovil-lens`:** the Explore buttons write `snap:restore=3` to `sessionStorage`; `use-scroll-snap.ts` reads it on mount, scrolls to that snap and syncs the engine, so Back lands on the KovilLens section.
+- **Returning from `/kovil-lens`:** the Explore buttons write `snap:restore=3` to `sessionStorage`; `use-page-scroll.ts` reads it on mount and scrolls to that snap, so Back lands on the KovilLens section.
 - The Skills section animations reset only on upward scroll toward KovilLens, not when arriving from Experience. Intentional — you shouldn't have to re-watch an animation just because you scrolled up one section and back down.
 - `ssr: false` on all Three.js components. Non-negotiable. Don't remove it and then file an issue.
 

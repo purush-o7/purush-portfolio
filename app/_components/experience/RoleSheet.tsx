@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
   Drawer,
   DrawerContent,
@@ -19,21 +19,11 @@ interface Props {
 
 /**
  * Phone role details — the shadcn Drawer (vaul) with two snap points (60% / full).
- * Drag the handle, tap the backdrop or press Esc to dismiss. `data-no-scroll-snap`
- * keeps the page snap engine out of every gesture on it.
+ * Drag the handle, tap the backdrop or press Esc to dismiss.
  */
 export function RoleSheet({ entry, onClose }: Props) {
   const [open, setOpen] = useState(true)
   const [snap, setSnap] = useState<number | string | null>(SNAPS[0])
-
-  // Hide the floating section arrows while the sheet is open so they can't cover it or navigate away
-  useEffect(() => {
-    const nav = document.querySelector<HTMLElement>("[data-section-nav]")
-    if (!nav) return
-    nav.style.opacity       = "0"
-    nav.style.pointerEvents = "none"
-    return () => { nav.style.opacity = ""; nav.style.pointerEvents = "" }
-  }, [])
 
   return (
     <Drawer
@@ -46,7 +36,6 @@ export function RoleSheet({ entry, onClose }: Props) {
       noBodyStyles
     >
       <DrawerContent
-        data-no-scroll-snap="true"
         className="h-full max-h-[96%] border-white/10 bg-[#0d0f22] text-white"
         style={{ borderTopColor: `${entry.accent}66` }}
       >
@@ -74,8 +63,6 @@ export function RoleSheet({ entry, onClose }: Props) {
 
         {/* Details — scrolls once the sheet is at its full snap point */}
         <div
-          data-scroll-passthrough
-          onWheel={e => { e.currentTarget.scrollTop += e.deltaY }}
           className="min-h-0 flex-1 px-5"
           style={{
             overflowY: snap === SNAPS[SNAPS.length - 1] ? "auto" : "hidden",

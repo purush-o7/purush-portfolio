@@ -46,7 +46,3 @@ export function trackContactClick(platform: "GitHub" | "LinkedIn" | "Email") {
   track("click_contact", { platform })
 }
 
-// ── Navigation ────────────────────────────────────────────────────────────────
-export function trackNavArrow(direction: "up" | "down", from_section: number) {
-  track("nav_arrow_click", { direction, from_section })
-}

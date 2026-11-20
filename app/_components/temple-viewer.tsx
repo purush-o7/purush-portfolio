@@ -411,7 +411,6 @@ export function TempleViewer({ standalone = false }: { standalone?: boolean } = 
 
   return (
     <div
-      data-no-scroll-snap={armed ? "true" : undefined}
       style={{
         position:    isFullscreen ? "fixed" : "relative",
         inset:       isFullscreen ? 0 : "auto",

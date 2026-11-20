@@ -164,7 +164,7 @@ function EditorPanelImpl({ active, onComplete, compact = false }: Props) {
 
       {/* ── Editor body ──────────────────────────────────────────────────────── */}
       <div style={{ flex: 1, minHeight: 0, position: "relative", display: "flex" }}>
-      <div data-scroll-passthrough style={{ flex: 1, display: "flex", overflow: "auto", overscrollBehavior: "contain" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "auto" }}>
 
         {/* Line numbers */}
         <div style={{

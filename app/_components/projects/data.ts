@@ -121,5 +121,8 @@ export const DEMO_CARDS: CardData[] = [
   },
 ]
 
-// Distinct weight colour per project on the gravity fabric (awards land on gold/amber)
-export const WEIGHT_COLORS = ["#00e5ff", "#34d399", "#f87171", "#60a5fa", "#a78bfa", "#ffb020", "#f59e0b"]
+// One colour per project: the reel clip, its timeline block and its details sheet all use it (awards land on gold/amber)
+export const PROJECT_COLORS = ["#00e5ff", "#34d399", "#f87171", "#60a5fa", "#a78bfa", "#ffb020", "#f59e0b"]
+
+export interface Project extends CardData { color: string }
+export const PROJECTS: Project[] = DEMO_CARDS.map((c, i) => ({ ...c, color: PROJECT_COLORS[i % PROJECT_COLORS.length] }))
