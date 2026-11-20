@@ -1,15 +1,16 @@
 "use client"
 
-import { memo, useCallback, useEffect, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { MONO }               from "./RoleContent"
-import { MetroMap, LaneKey, stopYs } from "./MetroMap"
+import { MetroMap, LaneKey, stopYs, elasticHeight } from "./MetroMap"
+import { useSnapMap, setPhoneExpStops } from "../../_hooks/snap-map"
 import { StopSheet }          from "./StopSheet"
-import { STOPS, LANES, useToday } from "./stops"
+import { STOPS, LANES, useToday, type Today } from "./stops"
 import { useExpProgress }     from "./use-exp-progress"
 
 /**
  * Phone layout. The whole page IS the timeline: one tall metro map on a real time scale that scrolls like any
- * other page (it is exactly two screens of scroll, moved 1:1 with your finger). Tap a station for the full story
+ * other page (as many screens tall as its labels need, moved 1:1 with your finger). Tap a station for the full story
  * in a bottom sheet. When you reach the end, the page moves on.
  */
 function ExperiencePhoneImpl() {
@@ -20,25 +21,40 @@ function ExperiencePhoneImpl() {
   const trackRef = useRef<HTMLDivElement>(null)
   const boxRef   = useRef<HTMLDivElement>(null)
 
-  // content is exactly two screens tall, so the scroll distance (one screen) matches the content overflow 1:1
+  // the content is a whole number of screens tall, so the scroll distance matches the content overflow 1:1
   useEffect(() => {
     const fit = () => setDims({ vh: window.innerHeight, w: boxRef.current?.clientWidth ?? window.innerWidth - 28 })
     fit()
     window.addEventListener("resize", fit)
     return () => window.removeEventListener("resize", fit)
   }, [])
-  const H  = dims.vh * 2
+  // The timeline is the fewest whole screens that give every crowded stretch the room its labels need; the quiet stretches
+  // share whatever is left (the time scale is elastic: it grows only where marks are dense). The page length follows.
+  const { expStops } = useSnapMap()
+  const unit = dims.w / 360, pad = 76 + 24                                  // map units → px; header room above, a little below
+  const fit = useMemo(() => {
+    const tEnd = today.end, tNow = today.now
+    const t: Today = { now: tNow, end: tEnd, label: "" }
+    const stops = Math.max(2, Math.ceil((elasticHeight(t, 40, true) * unit + pad) / dims.vh))
+    const target = (stops * dims.vh - pad) / unit
+    let lo = 40, hi = target * 2
+    for (let k = 0; k < 28; k++) { const mid = (lo + hi) / 2; if (elasticHeight(t, mid, true) > target) hi = mid; else lo = mid }
+    return { stops, baseH: lo }
+  }, [today.end, today.now, unit, dims.vh, pad])
+  const baseH = fit.baseH
+  useEffect(() => { setPhoneExpStops(fit.stops) }, [fit.stops])
+  const H  = dims.vh * expStops
   const vbH = Math.round(H * (360 / dims.w))                  // svg height in its own units
 
   const apply = useCallback((cp: number) => {
     if (trackRef.current) trackRef.current.style.transform = `translate3d(0, ${-(cp * dims.vh).toFixed(1)}px, 0)`
     // highlight the stop nearest the middle of the screen
     const mid = ((cp * dims.vh) + dims.vh * 0.5) * (360 / dims.w)
-    const ys = stopYs(vbH, today)
+    const ys = stopYs(vbH, today, true, baseH)
     let best = 0
     ys.forEach((y, i) => { if (Math.abs(y - mid) < Math.abs(ys[best] - mid)) best = i })
     setActive(a => (a === best ? a : best))
-  }, [dims, vbH, today])
+  }, [dims, vbH, baseH, today])
   useExpProgress(apply)
 
   const accent = LANES[STOPS[active].lane].color
@@ -49,7 +65,7 @@ function ExperiencePhoneImpl() {
 
       <div ref={trackRef} style={{ position: "absolute", top: 0, left: 14, right: 14, height: H, willChange: "transform" }}>
         <div ref={boxRef} style={{ position: "absolute", inset: 0, paddingTop: "calc(76px + env(safe-area-inset-top, 0px))", boxSizing: "border-box" }}>
-          <MetroMap sel={active} today={today} onSel={setOpen} H={vbH} gap={50} big dimFuture={false} />
+          <MetroMap sel={active} today={today} onSel={setOpen} H={vbH} baseH={baseH} big dimFuture={false} />
         </div>
       </div>
 

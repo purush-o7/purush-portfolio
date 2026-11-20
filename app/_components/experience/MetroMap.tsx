@@ -1,6 +1,6 @@
 "use client"
 
-import { LANES, STOPS, MONTHS, T_START, type Today } from "./stops"
+import { LANES, STOPS, MONTHS, T_START, monthYear, type Today } from "./stops"
 import { MONO } from "./RoleContent"
 
 const HEAD = "var(--font-heading)"
@@ -8,6 +8,67 @@ const W = 360
 const AX = 40                          // ruler x
 const LX = (l: number) => 94 + l * 27  // lane x
 const LABEL_X = 232
+/** Break a label onto lines of at most `max` characters, at spaces. */
+const wrap = (t: string, max = 14) => t.split(" ").reduce<string[]>((ls, w) => { const l = ls[ls.length - 1]; if (l !== undefined && (l + " " + w).length <= max) ls[ls.length - 1] = l + " " + w; else ls.push(w); return ls }, [])
+
+// Every station and every promotion is a mark on its line. Labels sit in a column on the right.
+interface Mark { key: string; stop: number; t: number; lane: number; title: string; co?: string; sub: string; promo?: boolean }
+const MARKS: Mark[] = []
+STOPS.forEach((st, i) => {
+  MARKS.push({ key: `s${i}`, stop: i, t: st.from, lane: st.lane, title: st.short, co: st.co, sub: st.when })
+  st.steps?.forEach((step, k) => { if (k > 0 && st.stepFrom) MARKS.push({ key: `p${i}-${k}`, stop: i, t: st.stepFrom[k], lane: st.lane, title: step, sub: monthYear(st.stepFrom[k]), promo: true }) })
+})
+
+/** Label geometry: a label is its title (one or two lines), then an optional company line, then the date. */
+function geom(big: boolean) {
+  const titleLH = big ? 18 : 16, coLH = big ? 15 : 13, subLH = big ? 15 : 13
+  const showCo  = (m: Mark) => !m.promo && !!m.co && (big || m.lane === 4)         // laptop is tighter: companies only on the Work line there
+  const linesOf = (m: Mark) => (m.promo ? [m.title] : wrap(m.title))
+  const above   = (m: Mark) => (linesOf(m).length - 1) * titleLH
+  const below   = (m: Mark) => (showCo(m) ? coLH : 0) + subLH
+  const need    = (p: Mark, n: Mark) => below(p) + titleLH + above(n) + 5          // least distance between two title baselines
+  return { titleLH, coLH, subLH, showCo, linesOf, above, below, need }
+}
+
+/**
+ * The time scale. Linear by default (laptop). With `baseH` it is elastic (phone): each stretch of time between two marks gets
+ * its natural share of `baseH`, or the room its two labels need if that is more. So the map grows only where marks crowd together.
+ */
+function stretches(today: Today, baseH: number, big: boolean) {
+  const span = today.end - T_START, g = geom(big)
+  const ord = [...MARKS].sort((a, b) => a.t - b.t)
+  const ts = [T_START, ...ord.map(m => m.t), today.end]
+  const lens: number[] = []
+  for (let k = 0; k < ts.length - 1; k++) {
+    const dt = ts[k + 1] - ts[k]
+    const nat = ((baseH - 40) * dt) / span
+    const req = k >= 1 && k <= ord.length - 1 && dt > 0.001 ? g.need(ord[k - 1], ord[k]) : 0
+    lens.push(Math.max(nat, req))
+  }
+  return { ts, lens, total: lens.reduce((a, b) => a + b, 0) }
+}
+
+/** Height (map units) an elastic map needs so every label has room. */
+export function elasticHeight(today: Today, baseH: number, big: boolean): number {
+  return Math.ceil(stretches(today, baseH, big).total + 40)
+}
+
+/** time → y, for a map of height H. */
+export function makeScale(today: Today, H: number, big = false, baseH?: number): (t: number) => number {
+  const span = today.end - T_START
+  if (!baseH) return t => 20 + ((t - T_START) / span) * (H - 40)
+  const { ts, lens, total } = stretches(today, baseH, big)
+  const f = (H - 40) / total
+  const start: number[] = []
+  lens.reduce((acc, l, k) => { start[k] = acc; return acc + l }, 0)
+  return t => {
+    let k = ts.length - 2
+    for (let i = 0; i < ts.length - 1; i++) if (t <= ts[i + 1]) { k = i; break }
+    const dt = ts[k + 1] - ts[k]
+    const u = dt > 0 ? Math.max(0, Math.min(1, (t - ts[k]) / dt)) : 0
+    return 20 + f * (start[k] + lens[k] * u)
+  }
+}
 
 /**
  * The career as a metro map on a real time scale. Time runs down the ruler (years and months, up to
@@ -15,26 +76,43 @@ const LABEL_X = 232
  * one are dimmed, so scrolling "walks" the line.
  */
 /** y of each stop's station in the map's own coordinates, for a given height (so a parent can tell which stop is nearest). */
-export function stopYs(H: number, today: Today): number[] {
-  const span = today.end - T_START
-  return STOPS.map(s => 20 + ((s.from - T_START) / span) * (H - 40))
+export function stopYs(H: number, today: Today, big = false, baseH?: number): number[] {
+  const tp = makeScale(today, H, big, baseH)
+  return STOPS.map(st => tp(st.from))
 }
 
-export function MetroMap({ sel, onSel, today, H = 540, gap = 38, big = false, dimFuture = true }: {
+export function MetroMap({ sel, onSel, today, H = 540, big = false, dimFuture = true, baseH }: {
   sel: number; onSel: (i: number) => void; today: Today
-  H?: number; gap?: number; big?: boolean; dimFuture?: boolean      // tall mode: more room between labels, larger type
+  H?: number; big?: boolean; dimFuture?: boolean; baseH?: number      // tall mode: more room between labels, larger type; baseH makes the time scale elastic
 }) {
-  const span = today.end - T_START
-  const tp   = (t: number) => 20 + ((t - T_START) / span) * (H - 40)
-  const n    = STOPS.length
+  const tp   = makeScale(today, H, big, baseH)
 
-  // labels sit in a column on the right; spread so none overlap
+  const marks = MARKS
+  const { titleLH, coLH, subLH, showCo, linesOf, above, below, need } = geom(big)
+  // Place the labels as close to their marks as possible while keeping every label clear of its neighbours. Promotion labels
+  // are weighted heavily so they stay level with their diamonds; the other labels give way first (weighted isotonic fit).
   const labelY: number[] = []
-  const order = STOPS.map((_, i) => i).sort((a, b) => tp(STOPS[a].from) - tp(STOPS[b].from))
-  let prev = -99
-  order.forEach(i => { const y = Math.max(tp(STOPS[i].from), prev + gap); labelY[i] = y; prev = y })
-  const over = labelY[order[n - 1]] - (H - 14)
-  if (over > 0) for (let k = n - 1, lim = H - 14; k >= 0; k--) { labelY[order[k]] = Math.min(labelY[order[k]], lim); lim = labelY[order[k]] - gap }
+  const order = marks.map((_, i) => i).sort((a, b) => tp(marks[a].t) - tp(marks[b].t))
+  const cum: number[] = [0]
+  for (let k = 1; k < order.length; k++) cum[k] = cum[k - 1] + need(marks[order[k - 1]], marks[order[k]])
+  const blocks: { w: number; s: number; n: number }[] = []
+  order.forEach((mi, k) => {
+    const w = marks[mi].promo ? 40 : 1
+    blocks.push({ w, s: w * (tp(marks[mi].t) - cum[k]), n: 1 })
+    while (blocks.length > 1) {
+      const q = blocks[blocks.length - 1], p = blocks[blocks.length - 2]
+      if (p.s / p.w <= q.s / q.w) break
+      blocks.splice(blocks.length - 2, 2, { w: p.w + q.w, s: p.s + q.s, n: p.n + q.n })
+    }
+  })
+  let at = 0
+  blocks.forEach(bl => { for (let j = 0; j < bl.n; j++, at++) labelY[order[at]] = bl.s / bl.w + cum[at] })
+  const firstI = order[0], lastI = order[order.length - 1]
+  const lo = 14 + above(marks[firstI]), hi = H - 6 - below(marks[lastI])
+  const lift = Math.max(0, lo - labelY[firstI])                                   // keep inside the top edge
+  order.forEach(i => { labelY[i] += lift })
+  const drop = Math.max(0, labelY[lastI] - hi)                                    // and inside the bottom edge
+  order.forEach(i => { labelY[i] -= drop })
 
   const ticks: React.ReactNode[] = []
   for (let y = T_START; y <= Math.ceil(today.end); y++) {
@@ -86,25 +164,41 @@ export function MetroMap({ sel, onSel, today, H = 540, gap = 38, big = false, di
           opacity={!dimFuture || i <= sel ? 1 : 0.35} style={{ transition: "opacity .3s" }} />
       ))}
 
-      {/* stations */}
-      {STOPS.map((s, i) => {
-        const x = LX(s.lane), y = tp(s.from), c = LANES[s.lane].color
-        const on = i === sel, reached = !dimFuture || i <= sel
+      {/* stations and promotion milestones */}
+      {marks.map((mk, i) => {
+        const st = STOPS[mk.stop]
+        const x = LX(mk.lane), y = tp(mk.t), c = LANES[mk.lane].color
+        const on = mk.stop === sel, reached = !dimFuture || mk.stop <= sel
+        const lines = linesOf(mk)
+        const top = labelY[i] - 1 - above(mk)
+        const co  = showCo(mk)
+        const coY = labelY[i] + coLH, subY = labelY[i] + (co ? coLH + subLH : subLH)
         return (
           <g
-            key={i} role="button" tabIndex={0} aria-label={`${i + 1}. ${s.title}, ${s.period}`} aria-current={on ? "step" : undefined}
-            onClick={() => onSel(i)}
-            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSel(i) } }}
+            key={mk.key} role="button" tabIndex={0} aria-label={mk.promo ? `${mk.title}, ${mk.sub}, at ${st.co}` : `${mk.stop + 1}. ${st.title}, ${st.co}, ${st.period}`} aria-current={on && !mk.promo ? "step" : undefined}
+            onClick={() => onSel(mk.stop)}
+            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSel(mk.stop) } }}
             style={{ cursor: "pointer", outline: "none", opacity: reached ? 1 : 0.5, transition: "opacity .3s" }}
           >
-            <polyline points={`${x + 13},${y} 214,${y} 222,${labelY[i]}`} fill="none" stroke="rgba(255,255,255,0.14)" />
-            {on && <circle cx={x} cy={y} r={11} fill="none" stroke={c} strokeWidth={2} style={{ animation: "mm-pulse 1.8s ease-out infinite" }} />}
-            <circle cx={x} cy={y} r={12} fill={on ? c : "#07070f"} stroke={c} strokeWidth={3} />
-            <text x={x} y={y + 4} textAnchor="middle" fill={on ? "#06121a" : "#fff"} style={{ font: `700 11px ${MONO}` }}>{i + 1}</text>
-            <text x={LABEL_X} y={labelY[i] - 1} fill={on ? "#fff" : "#c9cfe3"} style={{ font: `${on ? 700 : 600} ${big ? 17 : 15}px ${HEAD}` }}>{s.short}</text>
-            <text x={LABEL_X} y={labelY[i] + (big ? 16 : 14)} fill="#a0a7c0" style={{ font: `500 ${big ? 13 : 11.5}px ${MONO}` }}>{s.when}</text>
+            <polyline points={`${x + (mk.promo ? 8 : 13)},${y} 214,${y} 222,${labelY[i]}`} fill="none" stroke="rgba(255,255,255,0.14)" />
+            {mk.promo ? (
+              <>
+                <rect x={x - 6.5} y={y - 6.5} width={13} height={13} rx={2} transform={`rotate(45 ${x} ${y})`} fill={c} stroke="#07070f" strokeWidth={2} />
+              </>
+            ) : (
+              <>
+                {on && <circle cx={x} cy={y} r={11} fill="none" stroke={c} strokeWidth={2} style={{ animation: "mm-pulse 1.8s ease-out infinite" }} />}
+                <circle cx={x} cy={y} r={12} fill={on ? c : "#07070f"} stroke={c} strokeWidth={3} />
+                <text x={x} y={y + 4} textAnchor="middle" fill={on ? "#06121a" : "#fff"} style={{ font: `700 11px ${MONO}` }}>{mk.stop + 1}</text>
+              </>
+            )}
+            <text x={LABEL_X} y={top} fill={on ? "#fff" : "#c9cfe3"} style={{ font: `${on && !mk.promo ? 700 : 600} ${mk.promo ? (big ? 15 : 13) : big ? 17 : 15}px ${HEAD}` }}>
+              {lines.map((ln, k) => <tspan key={k} x={LABEL_X} dy={k === 0 ? 0 : titleLH}>{ln}</tspan>)}
+            </text>
+            {co && <text x={LABEL_X} y={coY} fill={c} fillOpacity={on ? 1 : 0.85} style={{ font: `600 ${big ? 12.5 : 11}px ${MONO}`, letterSpacing: "0.02em" }}>{mk.co}</text>}
+            <text x={LABEL_X} y={subY} fill="#a0a7c0" style={{ font: `500 ${big ? 13 : 11.5}px ${MONO}` }}>{mk.sub}</text>
             <circle cx={x} cy={y} r={20} fill="transparent" />
-            <rect x={LABEL_X - 4} y={labelY[i] - 17} width={122} height={36} fill="transparent" />
+            <rect x={LABEL_X - 4} width={122} height={above(mk) + 18 + below(mk)} y={labelY[i] - 17 - above(mk)} fill="transparent" />
           </g>
         )
       })}

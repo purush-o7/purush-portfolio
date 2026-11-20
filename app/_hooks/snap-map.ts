@@ -6,7 +6,7 @@ import { useSyncExternalStore } from "react"
  * Where each section sits in the page's scroll budget (one snap = 100vh).
  * hero 0 · education 1 · projects(KovilLens) 2 · skills 3 · experience · projects reel · footer.
  * Two stages measure themselves and report their length, so the page is exactly as long as its content:
- *  - experience: a laptop walks the stops column; a phone shows one tall timeline (2 screens)
+ *  - experience: a laptop walks the stops column; a phone shows one tall timeline (as tall as its labels need, at least 2 screens)
  *  - the reel: the project clips slide sideways while the page scrolls down
  */
 export const SNAP_EDU       = 1
@@ -25,8 +25,8 @@ export interface SnapMap {
   starts:    number[]    // section starts, for the arrows / analytics
 }
 
-function build(mobile: boolean, laptopStops: number, reelSnaps: number): SnapMap {
-  const expStops  = mobile ? 2 : laptopStops
+function build(mobile: boolean, laptopStops: number, reelSnaps: number, phoneStops = 2): SnapMap {
+  const expStops  = mobile ? phoneStops : laptopStops
   const expEnd    = EXP_START_SNAP + expStops - 1
   const reelStart = expEnd + 1
   const reelEnd   = reelStart + reelSnaps
@@ -37,11 +37,12 @@ function build(mobile: boolean, laptopStops: number, reelSnaps: number): SnapMap
 // Maps are cached per (device, lengths) so snapshots stay referentially stable.
 const cache = new Map<string, SnapMap>()
 let laptopStops = 9
+let phoneStops  = 2
 let reelSnaps   = 6
 const get = (mobile: boolean): SnapMap => {
-  const key = `${mobile}-${laptopStops}-${reelSnaps}`
+  const key = `${mobile}-${laptopStops}-${reelSnaps}-${phoneStops}`
   let m = cache.get(key)
-  if (!m) { m = build(mobile, laptopStops, reelSnaps); cache.set(key, m) }
+  if (!m) { m = build(mobile, laptopStops, reelSnaps, phoneStops); cache.set(key, m) }
   return m
 }
 const listeners = new Set<() => void>()
@@ -51,6 +52,12 @@ export function setLaptopExpStops(n: number) {
   n = Math.max(2, Math.min(16, Math.round(n)))
   if (n === laptopStops) return
   laptopStops = n; emit()
+}
+/** The phone timeline is as many screens tall as its labels need (at least two). */
+export function setPhoneExpStops(n: number) {
+  n = Math.max(2, Math.min(8, Math.round(n)))
+  if (n === phoneStops) return
+  phoneStops = n; emit()
 }
 export function setReelSnaps(n: number) {
   n = Math.max(2, Math.min(16, Math.round(n)))
