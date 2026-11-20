@@ -64,7 +64,9 @@ export function usePageScroll() {
     const settle = () => {
       if (touching || gliding || calm || dir === 0) return
       const m = snapMapNow()
-      const screenH = document.documentElement.scrollHeight / m.total      // the real height of one screen, whatever the browser bars are doing
+      // One screen = innerHeight, the same measure every section layer uses to place itself. (100vh would be taller than innerHeight on a phone
+      // while the address bar shows, so the snap would land a little past the section start, a sliver of the next one showing.)
+      const screenH = window.innerHeight
       if (!(screenH > 200)) return
       const y = window.scrollY, limit = screenH * SNAP_THRESHOLD
       if (y < EXP_START_SNAP * screenH) {                                   // rule 1: one-screen pages always land on a whole page
