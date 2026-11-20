@@ -135,10 +135,18 @@ function Phone({ state }: { state: string }) {
     return () => window.removeEventListener("deviceorientation", onOrient)
   }, [active, onOrient])
 
-  const enableTilt = async () => {
-    const DOE = (window as unknown as { DeviceOrientationEvent: { requestPermission: () => Promise<string> } }).DeviceOrientationEvent
-    try { if ((await DOE.requestPermission()) === "granted") setTiltOn(true) } catch { /* denied */ }
-  }
+  const enableTilt = useCallback(async () => {
+    const DOE = (window as unknown as { DeviceOrientationEvent: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent
+    if (typeof DOE?.requestPermission !== "function") return
+    try { if ((await DOE.requestPermission()) === "granted") setTiltOn(true) } catch { /* needs a tap first, or denied */ }
+  }, [])
+  // on by default: Android needs no permission; iPhone allows the request only from a tap, so ask on the first tap anywhere (the button stays as a fallback)
+  useEffect(() => {
+    if (!needsPerm) return
+    const first = () => { void enableTilt() }
+    window.addEventListener("pointerup", first, { once: true })
+    return () => window.removeEventListener("pointerup", first)
+  }, [needsPerm, enableTilt])
 
   // the lanyard sways gently, like a pendulum at rest
   useEffect(() => {
@@ -153,7 +161,7 @@ function Phone({ state }: { state: string }) {
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", padding: "0 20px calc(26px + env(safe-area-inset-bottom, 0px))" }}>
       {/* lanyard + card */}
-      <motion.div variants={dropV} initial="hide" animate={state} style={{ width: "100%" }}>
+      <motion.div variants={dropV} initial="hide" animate={state} style={{ width: "100%", paddingTop: "clamp(0px, calc((100svh - 690px) * 0.5), 44px)" }}>
         <div ref={sway} style={{ transformOrigin: "50% -4px" }}>
           <svg viewBox="0 0 30 110" preserveAspectRatio="none" aria-hidden style={{ display: "block", width: 24, height: "clamp(36px, 7vh, 64px)", margin: "0 auto", overflow: "visible" }}>
             <path d="M15 0 L15 110" fill="none" stroke="#233463" strokeWidth={22} />
@@ -193,7 +201,6 @@ function Phone({ state }: { state: string }) {
         </motion.p>
 
         <motion.div variants={riseV} style={{ marginTop: 18 }}>
-          <p style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", margin: "0 0 8px" }}>During college</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", paddingRight: 52 }}>
             {CHIPS.map(c => (
               <button

@@ -39,7 +39,7 @@ A natively scrolling, section-by-section journey through the stack, experience, 
 
 ## Noteworthy implementation details
 
-**Native scrolling** — nothing steps, snaps or intercepts the wheel, touch or keyboard. The page is a stack of `position: fixed` layers moved by `window.scrollY`, over spacer divs whose count (`_hooks/snap-map.ts`) is derived from the content: the phone Experience timeline, the laptop Experience column and the projects reel each measure themselves and report their length. `use-page-scroll.ts` only restores the position when you come back from `/kovil-lens` and reports the current section to analytics. Scrollable panels inside a section (Skills editor / terminal / chat) are plain `overflow: auto` boxes.
+**Native scrolling** — nothing steps or intercepts the wheel, touch or keyboard while you scroll. The one assist is a *settle*: when scrolling has fully stopped (`scrollend`, with a debounce fallback) and a section start lies ahead in the direction of travel within `SNAP_THRESHOLD` (18% of a screen), the page glides to it; otherwise nothing happens. Only section starts count (no snap points inside Experience or the reel), it is off for reduced motion, and it never acts while a finger is down. The page is a stack of `position: fixed` layers moved by `window.scrollY`, over spacer divs whose count (`_hooks/snap-map.ts`) is derived from the content: the phone Experience timeline, the laptop Experience column and the projects reel each measure themselves and report their length. `use-page-scroll.ts` runs the settle, restores the position when you come back from `/kovil-lens`, and reports the current section to analytics. Scrollable panels inside a section (Skills editor / terminal / chat) are plain `overflow: auto` boxes.
 
 **Particle face** — 7,000 points loaded from a pre-generated JSON file. Each particle has position, colour, and stroke-direction for a traveling wave animation. Mouse proximity creates a warm amber glow; the repulsion ring is mapped to the canvas element bounds (not the window) so it tracks correctly regardless of layout.
 
@@ -80,7 +80,7 @@ app/
 ├── kovil-lens/          # Full-space 3D explorer route (layout + page)
 │   └── particle-face    # 7k-point particle portrait
 ├── _hooks/
-│   ├── use-page-scroll  # Restore-on-return + section analytics (scrolling is native)
+│   ├── use-page-scroll  # Settle-snap to section starts, restore-on-return, section analytics
 │   ├── snap-map         # Device- and content-aware scroll budget
 │   └── scroll-nav       # Smooth jump helper
 ├── _lib/
