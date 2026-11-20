@@ -108,10 +108,9 @@ function Laptop({ state }: { state: string }) {
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 
-/** Phone: one big card on its lanyard (tilts with the phone; tap to flip), then the story and the college chips. */
+/** Phone: one big card on its lanyard (tilts with the phone; tap to flip), then the story. */
 function Phone({ state }: { state: string }) {
   const calm = useReducedMotion()
-  const [tiltOn, setTiltOn] = useState(false)
   const [flipped, setFlipped] = useState(false)
   const sway = useRef<HTMLDivElement>(null)
 
@@ -119,10 +118,10 @@ function Phone({ state }: { state: string }) {
   const ry = useSpring(useMotionValue(0), { stiffness: 120, damping: 16 })
   const sheenPos = useTransform(ry, [-14, 14], ["100% 0", "0% 0"])
 
-  // iPhone asks for permission before it shares the motion sensor; Android just sends it.
+  // Tilt only where the phone shares its motion sensor by default (Android). An iPhone would need a permission prompt, so it gets no tilt.
   const needsPerm = typeof window !== "undefined"
     && typeof (window as unknown as { DeviceOrientationEvent?: { requestPermission?: unknown } }).DeviceOrientationEvent?.requestPermission === "function"
-  const active = !calm && (!needsPerm || tiltOn)
+  const active = !calm && !needsPerm
 
   const onOrient = useCallback((e: DeviceOrientationEvent) => {
     if (e.gamma == null || e.beta == null) return
@@ -135,19 +134,6 @@ function Phone({ state }: { state: string }) {
     return () => window.removeEventListener("deviceorientation", onOrient)
   }, [active, onOrient])
 
-  const enableTilt = useCallback(async () => {
-    const DOE = (window as unknown as { DeviceOrientationEvent: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent
-    if (typeof DOE?.requestPermission !== "function") return
-    try { if ((await DOE.requestPermission()) === "granted") setTiltOn(true) } catch { /* needs a tap first, or denied */ }
-  }, [])
-  // on by default: Android needs no permission; iPhone allows the request only from a tap, so ask on the first tap anywhere (the button stays as a fallback)
-  useEffect(() => {
-    if (!needsPerm) return
-    const first = () => { void enableTilt() }
-    window.addEventListener("pointerup", first, { once: true })
-    return () => window.removeEventListener("pointerup", first)
-  }, [needsPerm, enableTilt])
-
   // the lanyard sways gently, like a pendulum at rest
   useEffect(() => {
     const el = sway.current
@@ -159,11 +145,11 @@ function Phone({ state }: { state: string }) {
   }, [calm])
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", padding: "0 20px calc(26px + env(safe-area-inset-bottom, 0px))" }}>
+    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: "clamp(18px, 4vh, 40px)", padding: "0 20px calc(26px + env(safe-area-inset-bottom, 0px))" }}>
       {/* lanyard + card */}
-      <motion.div variants={dropV} initial="hide" animate={state} style={{ width: "100%", paddingTop: "clamp(0px, calc((100svh - 690px) * 0.5), 44px)" }}>
+      <motion.div variants={dropV} initial="hide" animate={state} style={{ width: "100%" }}>
         <div ref={sway} style={{ transformOrigin: "50% -4px" }}>
-          <svg viewBox="0 0 30 110" preserveAspectRatio="none" aria-hidden style={{ display: "block", width: 24, height: "clamp(36px, 7vh, 64px)", margin: "0 auto", overflow: "visible" }}>
+          <svg viewBox="0 0 30 110" preserveAspectRatio="none" aria-hidden style={{ display: "block", width: 24, height: "clamp(36px, calc(100svh - 650px), 150px)", margin: "0 auto", overflow: "visible" }}>
             <path d="M15 0 L15 110" fill="none" stroke="#233463" strokeWidth={22} />
             <path d="M15 0 L15 110" fill="none" stroke="#2f4478" strokeWidth={2} strokeDasharray="6 6" />
           </svg>
@@ -188,7 +174,7 @@ function Phone({ state }: { state: string }) {
         </div>
       </motion.div>
 
-      {/* story + college chips */}
+      {/* story */}
       <motion.div variants={textV} initial="hide" animate={state} style={{ width: "100%", textAlign: "center" }}>
         <motion.p variants={riseV} style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.26em", textTransform: "uppercase", color: "#22e5f0", margin: 0 }}>
           Education · Class of 2024
@@ -199,30 +185,6 @@ function Phone({ state }: { state: string }) {
         <motion.p variants={riseV} style={{ fontFamily: "var(--font-sans)", fontSize: 14.5, lineHeight: 1.5, color: "rgba(255,255,255,0.66)", margin: 0 }}>
           B.Tech in Computer Science &amp; Engineering, Amritapuri, Kerala. CGPA 7.96 / 10.
         </motion.p>
-
-        <motion.div variants={riseV} style={{ marginTop: 18 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", paddingRight: 52 }}>
-            {CHIPS.map(c => (
-              <button
-                key={c.label}
-                onClick={() => goToStop(c.i)}
-                style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", borderRadius: 999, border: "1px solid #262c4f", background: "#0d1026", color: "#fff", padding: "7px 12px", fontFamily: MONO, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", textAlign: "left" }}
-              >
-                <span style={{ display: "block", fontSize: 9, letterSpacing: "0.14em", color: "rgba(255,255,255,0.55)" }}>{c.year}</span>
-                {c.label}
-              </button>
-            ))}
-          </div>
-        </motion.div>
-
-        {needsPerm && !tiltOn && !calm && (
-          <button
-            onClick={enableTilt}
-            style={{ marginTop: 14, border: "1px solid #22e5f0", color: "#22e5f0", borderRadius: 999, padding: "7px 16px", background: "transparent", fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase" }}
-          >
-            Enable tilt
-          </button>
-        )}
       </motion.div>
     </div>
   )

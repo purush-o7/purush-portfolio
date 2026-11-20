@@ -88,7 +88,7 @@ function ProjectsReelImpl() {
             if (!c) return
             const enter = i === 0 ? 1 : Math.max(0, Math.min(1, t - (i - 1)))
             const depth = Math.max(0, Math.min(3, t - i))
-            c.style.visibility = depth >= 3 ? "hidden" : "visible"
+            c.style.visibility = depth >= 3 ? "hidden" : "inherit"
             c.style.transform = `translate3d(0, calc(${((1 - enter) * 130).toFixed(2)}% - ${(depth * 10).toFixed(1)}px), 0) scale(${(1 - depth * 0.04).toFixed(3)})`
           })
         } else {

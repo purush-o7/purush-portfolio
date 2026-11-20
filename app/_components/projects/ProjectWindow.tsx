@@ -9,13 +9,13 @@ const SANS = "var(--font-sans)"
 
 /** The one figure to remember, a short line, and two points for each project (short wording written for the window). */
 export const COPY: Record<string, { fig: string; line: string; pts: [string, string]; art?: string }> = {
-  "KovilLens":     { fig: "15 → 60 fps", line: "A 9th-century Chola temple preserved on HoloLens 2.", pts: ["", ""] },
+  "KovilLens":     { fig: "15 → 60 fps", line: "A 9th-century Chola temple preserved on HoloLens 2.", pts: ["Gaze-driven notes on every pillar and carving", "Three expert feedback rounds; accepted at ICVR 2025"] },
   "Sapota AI":     { fig: "~88%", line: "Fruit ripeness and bruises from two cameras.", pts: ["Custom CNN, three-class ripeness detection", "Hybrid SVM + MobileNet bruise detection, +15% precision"], art: "sapota" },
   "RecordVault":   { fig: "Team of 4", line: "A CRM for record labels on a 3NF PostgreSQL schema.", pts: ["Transaction-safe CRUD with commit and rollback", "Role-based access for admins and standard users"], art: "db" },
   "code@Amrita":   { fig: "On Azure", line: "A learning path for competitive-programming beginners.", pts: ["Problem sets, learning paths and contest guides", "React front end with a custom domain"], art: "cp" },
-  "SSR Club":      { fig: "Full stack", line: "A platform for a club's initiatives, events and outreach.", pts: ["", ""], art: "club" },
-  "VisionAssist":  { fig: "IEEE", line: "Voice guidance and hazard detection for visually impaired users.", pts: ["", ""], art: "vision" },
-  "Access Denied": { fig: "1st prize", line: "Anokha 2023: circuits, troubleshooting and coding under pressure.", pts: ["", ""], art: "circuit" },
+  "SSR Club":      { fig: "Full stack", line: "A platform for a club's initiatives, events and outreach.", pts: ["Django REST APIs for initiatives and events", "Led the team through a 4-month design-to-deployment"], art: "club" },
+  "VisionAssist":  { fig: "IEEE", line: "Voice guidance and hazard detection for visually impaired users.", pts: ["Working prototype built in 24 hours", "Raspberry Pi system that speaks directions and warns of obstacles"], art: "vision" },
+  "Access Denied": { fig: "1st prize", line: "Anokha 2023: circuits, troubleshooting and coding under pressure.", pts: ["Circuit design and fault finding against the clock", "Team of three; competitive coding rounds"], art: "circuit" },
 }
 /** Which of the four window layouts each project uses */
 const LAYOUT: Record<string, "A" | "B" | "C" | "D"> = {

@@ -11,28 +11,31 @@ export function ProjectCard({ p, i, total, photo }: { p: Project; i: number; tot
   const c = COPY[p.title]
   const hasLink = p.link && p.link !== "#"
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", gap: 12, padding: 12, borderRadius: 22, background: "#0d1026", border: "1px solid #2a3157", boxShadow: "0 -14px 32px rgba(0,0,0,0.6)" }}>
-      <div style={{ position: "relative", flex: 1, minHeight: 0, borderRadius: 14, overflow: "hidden", background: `radial-gradient(120% 90% at 0% 0%, ${p.color}30, #090b1a 62%)` }}
+    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", gap: 14, padding: 12, borderRadius: 22, background: "#0d1026", border: "1px solid #2a3157", boxShadow: "0 -14px 32px rgba(0,0,0,0.6)" }}>
+      <style>{`@media (max-height: 620px){.pc-pts{display:none !important}}`}</style>
+
+      {/* top: the picture */}
+      <div style={{ position: "relative", flex: "0 0 clamp(150px, 38%, 300px)", borderRadius: 14, overflow: "hidden", background: photo ? "#090b1a" : "#0a0d1d" }}
         role={!photo ? "img" : undefined} aria-label={!photo ? `${p.title}: illustration` : undefined}>
-        {photo ? (
-          <>
-            <Picture p={p} photo={photo} />
-            <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(7,8,20,0.92), rgba(7,8,20,0) 55%)" }} />
-            <div style={{ position: "absolute", left: 16, bottom: 14, fontFamily: HEAD, fontWeight: 700, fontSize: 46, lineHeight: 1, letterSpacing: "-0.04em", color: p.color, textShadow: `0 0 30px ${p.color}66` }}>{c.fig}</div>
-          </>
-        ) : (
-          <>
-            <div style={{ position: "absolute", left: 16, top: 14, fontFamily: HEAD, fontWeight: 700, fontSize: 46, lineHeight: 1, letterSpacing: "-0.04em", color: p.color }}>{c.fig}</div>
-            <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, aspectRatio: "16 / 10", WebkitMaskImage: "linear-gradient(to bottom, transparent, #000 22%)", maskImage: "linear-gradient(to bottom, transparent, #000 22%)" }}><Picture p={p} /></div>
-          </>
-        )}
+        <Picture p={p} photo={photo} />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px 4px" }}>
+
+      {/* bottom: what it is */}
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: 10, padding: "2px 4px 4px" }}>
         <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.72)" }}>{pad2(i + 1)} / {pad2(total)} · {p.tag}</div>
-        <h3 style={{ margin: 0, fontFamily: HEAD, fontWeight: 700, fontSize: 26, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#fff" }}>{p.title}</h3>
+        <div style={{ fontFamily: HEAD, fontWeight: 700, fontSize: 40, lineHeight: 1, letterSpacing: "-0.04em", color: p.color }}>{c.fig}</div>
+        <h3 style={{ margin: 0, fontFamily: HEAD, fontWeight: 700, fontSize: 22, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#fff" }}>{p.title}</h3>
         <p style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.45, color: "rgba(255,255,255,0.88)" }}>{c.line}</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-          {p.tech.slice(0, 3).map(t => (
+        <ul className="pc-pts" style={{ listStyle: "none", margin: "2px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+          {c.pts.filter(Boolean).map(t => (
+            <li key={t} style={{ position: "relative", paddingLeft: 16, fontFamily: "var(--font-sans)", fontSize: 13.5, lineHeight: 1.4, color: "rgba(255,255,255,0.8)" }}>
+              <span aria-hidden style={{ position: "absolute", left: 0, top: "0.75em", width: 8, height: 2, background: p.color }} />
+              {t}
+            </li>
+          ))}
+        </ul>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: "auto" }}>
+          {p.tech.slice(0, 4).map(t => (
             <span key={t} style={{ fontFamily: MONO, fontSize: 11, padding: "2px 8px", borderRadius: 4, border: `1px solid ${p.color}88`, color: "rgba(255,255,255,0.9)" }}>{t}</span>
           ))}
         </div>
